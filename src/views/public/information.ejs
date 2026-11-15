@@ -1,0 +1,6 @@
+<%- include('../layouts/header') %><article class="public-content public-information panel stack"><h1><%= t('public:'+page+'Title') %></h1><p><%= t('public:'+page+'Description') %></p>
+<% if(page==='about'){ %><p><%= t('public:aboutBody') %></p><a class="text-link" href="<%= localeUrl('/community') %>"><%= t('public:explore') %> →</a><% } %>
+<% if(page==='register'){ %><p><%= t('public:inviteOnly') %></p><a class="button" href="<%= localeUrl('/login') %>"><%= t('public:login') %></a><% } %>
+<% if(page==='privacy'){ %><p><%= t('public:privacyBody') %></p><p><%= t('public:privacyCookies') %></p><% } %>
+<% if(['legal','contact','privacy'].includes(page)){ %><dl class="stack"><% if(page==='legal'){ %><div><dt><%= t('public:operator') %></dt><dd class="preserve"><%= legal.name || t('public:legalMissing') %></dd></div><div><dt><%= t('public:address') %></dt><dd class="preserve"><%= legal.address || t('public:legalMissing') %></dd></div><% } %><div><dt><%= t('public:contactTitle') %></dt><dd><% if(legal.email){ %><a class="text-link" href="<%= 'mailto:'+legal.email %>"><%= legal.email %></a><% }else{ %><%= t('public:contactMissing') %><% } %></dd></div></dl><% } %>
+</article><%- include('../layouts/footer') %>

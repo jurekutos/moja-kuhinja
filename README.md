@@ -1,5 +1,7 @@
 # Moja kuhinja
 
+The app now includes a public website and approved recipe directory without login. Open `/sl/welcome` or `/sl/community` (also `/en/…` and `/de/…`). Private workspace recipes remain under `/{language}/recipes`. See [Public website and SEO integration](docs/PUBLIC_WEBSITE.md) for routes, optional canonical/legal configuration, security boundaries and verification status. This update needs no database migration; tests/builds were skipped at the user's request.
+
 The interface now supports Slovenian, English and German, with independent recipe translations, strict language-specific public moderation and multilingual catalogs. Existing installations must stop the server and make a matched backup before applying migrations 0007/0008. See [Multilingual setup, workflows and rollback](docs/MULTILINGUAL.md). These migrations have not been applied to the actual development database during implementation.
 
 For a short explanation of the code and where to make changes, see [Code guide](CODE_GUIDE.md).

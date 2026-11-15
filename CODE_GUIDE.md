@@ -2,6 +2,8 @@
 
 Use this guide when changing the application. For installation, account setup and configuration, see [README.md](README.md).
 
+For anonymous public pages, snapshot-only recipe reads, image authorization, canonical URLs, JSON-LD and sitemap generation, see [Public website guide](docs/PUBLIC_WEBSITE.md). Start with `src/routes/public-site.js`, `src/services/public-cookbook.js` and `src/services/seo.js`. Existing private routes remain behind authentication.
+
 For the new landing page, invitations, roles and moderated shared cookbook, see [Workspaces guide](docs/WORKSPACES.md).
 
 For weekly lunch/dinner planning, planned servings and conflict handling, see [Planner guide](docs/PLANNER.md).

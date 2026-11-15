@@ -10,12 +10,13 @@ import { recipeService, normalized } from './services/recipes.js';
 import { imageService } from './services/images.js';
 import { csrfToken, identify } from './middleware/security.js';
 import { routes } from './routes/index.js';
+import { publicSiteRoutes } from './routes/public-site.js';
 import { scaleQuantity } from '../public/js/quantities.js';
 import { commentService } from './services/comments.js';
 export function createApp({ db, sqlite, config }) {
   sqlite.function('normalize_sl', { deterministic: true }, value => normalized(String(value ?? '')));
   const app = express(); app.disable('x-powered-by');
-  Object.assign(app.locals, { user: null, csrf: '', path: '', flash: null, workspaces: [], inviteLink: null });
+  Object.assign(app.locals, { user: null, csrf: '', path: '', flash: null, workspaces: [], inviteLink: null,publicWebsite:false,seo:null });
   if (config.trustProxy) app.set('trust proxy', 1);
   app.set('view engine', 'ejs'); app.set('views', path.resolve('src/views'));
   app.use(helmet({ contentSecurityPolicy: { directives: { 'script-src': ["'self'"], 'img-src': ["'self'", 'data:'], 'upgrade-insecure-requests': config.production ? [] : null } }, referrerPolicy: { policy: 'no-referrer' }, strictTransportSecurity: config.production ? undefined : false }));
@@ -26,7 +27,7 @@ export function createApp({ db, sqlite, config }) {
   app.use(express.urlencoded({ extended: false, limit: '512kb' }));
 
   app.use((req, res, next) => {
-    res.set('Cache-Control', 'no-store'); res.locals.path = req.path;
+    res.set({'Cache-Control':'no-store','X-Robots-Tag':'noindex, nofollow'}); res.locals.path = req.path;
     res.locals.flash = req.session.flash; delete req.session.flash;
     res.locals.inviteLink = req.session.inviteLink; delete req.session.inviteLink;
     res.locals.scaleQuantity = (quantity,base,target)=>scaleQuantity(quantity,base,target,req.language);
@@ -34,6 +35,7 @@ export function createApp({ db, sqlite, config }) {
     res.locals.pageLink = page => { const params = new URLSearchParams(); for (const [k, v] of Object.entries(req.query)) if (typeof v === 'string' && k !== 'page') params.set(k, v); params.set('page', page); return '/recipes?' + params.toString(); };
     next();
   });
+  app.use(publicSiteRoutes(db,config));
   app.use(routes(db, recipeService(db), imageService(db, config.uploadDir), config, commentService(db)));
   app.use((req, res) => res.status(404).render('error', { title: tr("common:s5dbe36ac6d2d"), message: tr("common:s201a7f839959") }));
   app.use((error, req, res, next) => {

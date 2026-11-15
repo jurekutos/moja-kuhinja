@@ -33,7 +33,7 @@ export function localizedNavigation(req, res, next) {
   res.redirect = (statusOrUrl, destination) => typeof statusOrUrl === 'number'
     ? redirect(statusOrUrl, localizedUrl(destination, req.language))
     : redirect(localizedUrl(statusOrUrl, req.language));
-  if (['GET','HEAD'].includes(req.method) && (!req.urlLanguage || req.languageAlias)) {
+  if (['GET','HEAD'].includes(req.method) && !['/robots.txt','/sitemap.xml'].includes(req.path) && (!req.urlLanguage || req.languageAlias)) {
     const localPath = '/' + req.url.replace(/^\/+/, '');
     return res.redirect(302, localizedUrl(localPath, req.language, true));
   }

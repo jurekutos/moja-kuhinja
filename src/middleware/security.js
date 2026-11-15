@@ -3,6 +3,8 @@ import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { eq, asc } from 'drizzle-orm';
 import { users, members, households } from '../db/schema.js';
 export function csrfToken(req, res, next) {
+  const publicRead=['GET','HEAD'].includes(req.method) && /^\/(?:$|welcome$|community(?:\/|$)|recepti$|rezepte$|about$|contact$|privacy$|legal$|register$|robots\.txt$|sitemap\.xml$)/.test(req.path);
+  if(publicRead&&!req.session.userId){res.locals.csrf='';return next();}
   req.session.csrf ||= randomBytes(32).toString('hex');
   res.locals.csrf = req.session.csrf; next();
 }

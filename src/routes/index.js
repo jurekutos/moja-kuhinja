@@ -35,10 +35,8 @@ export function routes(db, recipes, images, config, comments) {
   router.post('/language', verifyCsrf, changeLanguage(db,config.production));
   router.get('/login', auth.loginPage);
   router.post('/login', limit, verifyCsrf, auth.login);
-  router.get('/welcome', (req, res) => res.render('landing', { title: tr('common:landingTitle') }));
   router.get('/join/:token', workspace.join);
   router.post('/join/:token', limit, verifyCsrf, workspace.accept);
-  router.get('/', (req, res, next) => req.user ? next() : res.render('landing', { title: tr('common:landingTitle') }));
   router.use(requireAuth);
   router.use(accountAdminRoutes(db,workspaces,config));
   router.post('/logout', verifyCsrf, auth.logout);
@@ -51,7 +49,6 @@ export function routes(db, recipes, images, config, comments) {
   router.get('/admin/invitations', requireModerator, workspace.platform);
   router.post('/admin/invitations', verifyCsrf, requireModerator, workspace.invitePlatform);
   router.post('/admin/invitations/:invitationId/revoke', verifyCsrf, requireModerator, workspace.revokePlatform);
-  router.get('/community', community.list);
   router.get('/submissions', community.mine);
   router.get('/admin/reviews', requireModerator, community.reviews);
   router.get('/community/:id', community.detail);

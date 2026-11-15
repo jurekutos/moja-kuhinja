@@ -1,5 +1,7 @@
 # Workspaces, invitations and the shared cookbook
 
+The approved shared cookbook is now also available anonymously, using the same language-specific snapshots and moderation. Public pages never include private notes, workspace comments or moderation feedback. Submission previews and all write actions remain authenticated. See [Public website integration](PUBLIC_WEBSITE.md) for routes, public image checks and SEO configuration. Earlier statements below that public recipe reads require login describe the previous behavior.
+
 Multilingual upgrade: public visibility now requires a complete approved snapshot in the viewer's selected language; there is no public language fallback. Global categories are mapped explicitly, and each language is reviewed independently. See [Multilingual workflows](MULTILINGUAL.md) for the current rules, additive migrations and backup/rollback instructions. Recipe edits, images and translations are restricted to their original author with an editing role.
 
 For the added profile settings, membership leaving, workspace rename/delete and separate Super Admin operations dashboard, see [Administration](ADMINISTRATION.md). A workspace admin/moderator is not a Super Admin. Follow [Backup and restore](BACKUP.md) before migrations/deletions on real data.
