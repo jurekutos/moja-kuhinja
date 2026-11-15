@@ -1,10 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { eq } from 'drizzle-orm';
-import { images,publications,fileDeletions } from '../db/schema.js';
+import { images,publications,publicationTranslations,fileDeletions } from '../db/schema.js';
 export function referencedFiles(db) {
   const used=new Set(db.select().from(images).all().flatMap(row=>[row.filename,row.thumbnail]));
   for(const row of db.select({snapshot:publications.snapshot}).from(publications).all()) for(const image of JSON.parse(row.snapshot).images) {used.add(image.filename);used.add(image.thumbnail);}
+  for(const row of db.select().from(publicationTranslations).all())for(const image of JSON.parse(row.snapshot).images || []){used.add(image.filename);used.add(image.thumbnail);}
   return used;
 }
 export async function drainFileDeletions(db,directory) {

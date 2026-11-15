@@ -84,7 +84,7 @@ try {
   assert.equal(await page.locator('.card-heart button').getAttribute('aria-pressed'), 'true');
   await page.goto(base + '/recipes/' + id);
   page.once('dialog', dialog => dialog.accept());
-  await page.getByRole('button', { name: 'Pošlji v skupno kuharico', exact: true }).click(); await page.waitForURL(/\/community\/\d+$/);
+  await page.getByRole('button', { name: 'Pošlji v skupno kuharico', exact: true }).click(); await page.waitForURL(/\/community\/\d+(\?.*)?$/);
   const communityUrl = page.url();
   await page.getByRole('button', { name: 'Odobri objavo', exact: true }).click(); await page.waitForURL(base + '/admin/reviews');
   await page.goto(base + '/community'); assert.equal(await page.locator('.recipe-card').count(), 1);

@@ -1,3 +1,4 @@
+import { tr } from '../i18n/index.js';
 import { and, eq, asc } from 'drizzle-orm';
 import { comments, recipes, users } from '../db/schema.js';
 import { parseComment } from '../validators/comment.js';
@@ -5,7 +6,7 @@ import { parseComment } from '../validators/comment.js';
 export function commentService(db) {
   function requireRecipe(recipeId, user) {
     const recipe = db.select({ id: recipes.id }).from(recipes).where(and(eq(recipes.id, recipeId), eq(recipes.householdId, user.householdId))).get();
-    if (!recipe) throw Object.assign(new Error('Recept ne obstaja ali do njega nimate dostopa.'), { status: 404 });
+    if (!recipe) throw Object.assign(new Error(tr("recipes:sa4704a782416")), { status: 404 });
   }
   return {
     list(recipeId, user) {
@@ -21,7 +22,7 @@ export function commentService(db) {
     remove(recipeId, commentId, user) {
       requireRecipe(recipeId, user);
       const deleted = db.delete(comments).where(and(eq(comments.id, commentId), eq(comments.recipeId, recipeId), eq(comments.userId, user.id))).returning({ id: comments.id }).get();
-      if (!deleted) throw Object.assign(new Error('Komentar ne obstaja ali ga ne morete izbrisati.'), { status: 404 });
+      if (!deleted) throw Object.assign(new Error(tr("recipes:s405f1ef74378")), { status: 404 });
     },
   };
 }

@@ -1,19 +1,19 @@
 <header class="page-header">
   <div>
-    <div class="tags"><% recipe.categories.forEach(c => { %><span><%= c %></span><% }); %><% if (recipe.status === 'draft') { %><span>Osnutek</span><% } %></div>
+    <div class="tags"><% recipe.categories.forEach(c => { %><span><%= c %></span><% }); %><% if (recipe.status === 'draft') { %><span><%= t("common:sa4cf485f8f37") %></span><% } %></div>
     <h1><%= recipe.title %></h1>
-    <p class="small muted recipe-author">Avtor: <a class="text-link" href="/recipes?view=workspace&amp;author=<%= recipe.createdBy %>"><%= recipe.authorName %></a></p>
-    <p class="small muted">Dodano <%= new Date(recipe.createdAt).toLocaleDateString('sl-SI', { timeZone: 'Europe/Ljubljana' }) %> · Posodobljeno <%= new Date(recipe.updatedAt).toLocaleDateString('sl-SI', { timeZone: 'Europe/Ljubljana' }) %></p>
+    <p class="small muted recipe-author"><%= t("common:sa45dd918ddd9") %> <a class="text-link" href="/recipes?view=workspace&amp;author=<%= recipe.createdBy %>"><%= recipe.authorName %></a></p>
+    <p class="small muted"><%= t("common:s83ce3be0337f") %> <%= new Date(recipe.createdAt).toLocaleDateString(locale, { timeZone: 'Europe/Ljubljana' }) %> <%= t("common:s579fb939a6a6") %> <%= new Date(recipe.updatedAt).toLocaleDateString(locale, { timeZone: 'Europe/Ljubljana' }) %></p>
     <p class="muted preserve"><%= recipe.description %></p>
   </div>
   <% if (!cooking) { %><div class="recipe-header-tools">
     <div class="actions">
-      <form action="/recipes/<%= recipe.id %>/favorite" method="post"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="button secondary" aria-pressed="<%= recipe.favorite %>"><%= recipe.favorite ? '♥ Priljubljen' : '♡ Med priljubljene' %></button></form>
+      <form action="/recipes/<%= recipe.id %>/favorite" method="post"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="button secondary" aria-pressed="<%= recipe.favorite %>"><%= recipe.favorite ? t("common:scf71b8366577") : t("common:sd3d611d39def") %></button></form>
       <% if (user.role !== 'viewer' && recipe.createdBy === user.id) { %>
-        <a class="button secondary" href="/recipes/<%= recipe.id %>/edit">Uredi</a>
-        <form action="/recipes/<%= recipe.id %>/delete" method="post" data-confirm="Res izbrišem recept in vse njegove slike? Tega ni mogoče razveljaviti."><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="button secondary danger">Izbriši recept</button></form>
+        <a class="button secondary" href="/recipes/<%= recipe.id %>/edit"><%= t("common:sf9787469a860") %></a>
+        <form action="/recipes/<%= recipe.id %>/delete" method="post" data-confirm="<%= t("common:sa448be7c1fd0") %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="button secondary danger"><%= t("common:s6aa2bf224c3e") %></button></form>
       <% } %>
-      <a class="button" data-cook-link href="/recipes/<%= recipe.id %>/cook">Začni kuhati →</a>
+      <a class="button" data-cook-link href="/recipes/<%= recipe.id %>/cook?lang=<%= recipe.language %>"><%= t("common:s741eafb0bd05") %></a>
     </div>
   </div><% } %>
 </header>

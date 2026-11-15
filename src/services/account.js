@@ -1,3 +1,4 @@
+import { tr } from '../i18n/index.js';
 import argon2 from 'argon2';
 import { and, eq, sql } from 'drizzle-orm';
 import { users, members, households, sessions } from '../db/schema.js';
@@ -19,12 +20,12 @@ export function accountService(db) {
       passwordChange(input);
       const account=db.select({hash:users.passwordHash,version:users.sessionVersion}).from(users).where(eq(users.id,user.id)).get();
       const valid=account && await argon2.verify(account.hash,input.currentPassword).catch(()=>false);
-      if(!valid) throw Object.assign(new Error('Trenutno geslo ni pravilno.'),{status:422});
-      if(input.currentPassword===input.newPassword) throw Object.assign(new Error('Novo geslo mora biti drugačno od trenutnega.'),{status:422});
+      if(!valid) throw Object.assign(new Error(tr("auth:sbb81c5ab31f6")),{status:422});
+      if(input.currentPassword===input.newPassword) throw Object.assign(new Error(tr("auth:s573f23f1a50f")),{status:422});
       const hash=await argon2.hash(input.newPassword,{type:argon2.argon2id,memoryCost:65536,timeCost:3,parallelism:1});
       return db.transaction(tx=>{
         const updated=tx.update(users).set({passwordHash:hash,sessionVersion:account.version+1}).where(and(eq(users.id,user.id),eq(users.passwordHash,account.hash),eq(users.sessionVersion,account.version))).returning({version:users.sessionVersion}).get();
-        if(!updated) throw Object.assign(new Error('Geslo se je medtem spremenilo. Ponovno se prijavite.'),{status:409});
+        if(!updated) throw Object.assign(new Error(tr("auth:sed802ae9283e")),{status:409});
         tx.delete(sessions).where(sql`json_extract(${sessions.data}, '$.userId') = ${user.id}`).run();
         audit(tx,user.id,'password_changed');
         return updated.version;

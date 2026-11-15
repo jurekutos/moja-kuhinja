@@ -78,7 +78,7 @@ For example, submitting the new-recipe form sends `POST /recipes`. The route che
 | Upload sizes or image processing | [src/services/images.js](src/services/images.js) and multipart limits in [src/routes/index.js](src/routes/index.js). |
 | Port or database/upload locations | `.env`; restart the server after changes. |
 
-All application text shown to users should remain in Slovenian. In EJS, use `<%= value %>` for user-provided text so HTML is escaped. `<%- ... %>` is used for trusted template includes; do not use it to display recipe content.
+Interface text uses feature translation keys from `src/locales/{sl,en,de}/`: `t('feature:key')` in EJS and `tr('feature:key')` in server code. Keep keys complete in all three languages. Recipe/user content is independent and must never be implicitly translated. See [Multilingual architecture and upgrade](docs/MULTILINGUAL.md). In EJS, use `<%= value %>` for user-provided text so HTML is escaped. `<%- ... %>` is used for trusted template includes; do not use it to display recipe content.
 
 ## Example: add a recipe field
 
@@ -96,8 +96,8 @@ Changing a schema file alone does not update an existing database. Keep generate
 
 ## Data ownership to preserve
 
-- A recipe belongs to a **household/workspace**. Only its admins and editors may edit it; every server-side read/write must keep the ownership check.
-- Users can belong to multiple households/workspaces. The active membership comes from the session and is checked against the database on each request. Only workspace admins/editors may change shared recipes; viewers may read, comment, favorite and save their own notes.
+- A recipe belongs to a **household/workspace**. Its original author must also have an admin/editor role to change it, its translations or images; every server-side read/write must keep the ownership check.
+- Users can belong to multiple households/workspaces. The active membership comes from the session and is checked against the database on each request. Members may read authorized private recipes regardless of content language, comment, favorite and save their own notes. Public content additionally requires an approved complete version in the viewer's interface language.
 - Global recipes are separate moderated snapshots, not permission changes on private recipes. Keep private notes/comments out of snapshots and use the community image route for snapshot photos. Platform moderators are distinct from workspace admins.
 - Favorites and recipe notes belong to an **individual user**. Notes live in `recipe_notes`, not in the shared recipe row.
 - Recipe comments live in `recipe_comments` and are visible to the **whole household**. They store the author's user ID and creation time. Adding/deleting uses CSRF-protected POST routes; only authors may delete their own comments. Deleting the recipe also deletes its comments.

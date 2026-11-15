@@ -162,7 +162,9 @@ test('recipe views combine only own workspace recipes and approved public snapsh
   const foreignId = recipes.save({...sample('Pogled javni'),categories:['Samo javna kategorija']},outsideUser);
   const pendingId = recipes.save(sample('Pogled čaka'),outsideUser);
   recipes.save(sample('Pogled tuj zasebni'),outsideUser);
-  const publicationId = await community.submit(foreignId,outsideUser);
+  const globalId=c.db.insert(t.globalCategories).values({key:'test_public_category',active:true}).returning().get().id;
+  for(const language of ['sl','en','de'])c.db.insert(t.globalCategoryNames).values({categoryId:globalId,language,name:'Samo javna kategorija'}).run();
+  const publicationId = await community.submit(foreignId,outsideUser,{categoryIds:[globalId]});
   await community.submit(pendingId,outsideUser);
   community.review(publicationId,adminUser,'approved','');
   const own = catalog.list(adminUser,{q:'Pogled',view:'workspace'});

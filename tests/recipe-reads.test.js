@@ -25,7 +25,7 @@ test('daily opens aggregate readers, respect Ljubljana month boundaries, isolate
     const recipes=recipeService(c.db);
     const sample=title=>({title,description:'',prepMinutes:0,cookMinutes:0,servings:2,notes:'',sourceType:'manual',sourceUrl:'',sourceDescription:'',status:'published',categories:[],ingredients:[],steps:[]});
     const id=recipes.save(sample('Juha'),user), hidden=recipes.save(sample('SECRET OTHER RECIPE'),other);
-    const snapshot=JSON.stringify({...sample('Javna juha'),images:[],author:'Test'});
+    const snapshot=JSON.stringify({...sample('Javna juha'),ingredients:[{name:'Voda',quantity:'1',unit:'l',note:''}],steps:['Skuhajte.'],images:[],author:'Test'});
     const pub=c.db.insert(t.publications).values({householdId:1,recipeId:id,submittedBy:1,status:'approved',snapshot,createdAt:new Date().toISOString()}).returning().get().id;
     const pending=c.db.insert(t.publications).values({householdId:1,submittedBy:1,snapshot,createdAt:new Date().toISOString()}).returning().get().id;
     let now=new Date('2026-10-31T22:30:00Z');
@@ -62,7 +62,7 @@ test('daily opens aggregate readers, respect Ljubljana month boundaries, isolate
     await agent.get(`/recipes/${hidden}`).expect(404);
     await agent.get(`/community/${pending}`).expect(200);
     assert.equal(c.db.select().from(t.recipeReads).all().length,before);
-    const detail=await agent.get(`/recipes/${id}`).expect(200);assert.match(detail.text,/Odprtja skupaj/);
+    const detail=await agent.get(`/recipes/${id}`).expect(200);assert.match(detail.text,/Skupno ogledov/);
     const counted=c.db.select().from(t.recipeReads).all().length;
     await agent.get(`/recipes/${id}`).expect(200);
     assert.equal(c.db.select().from(t.recipeReads).all().length,counted);

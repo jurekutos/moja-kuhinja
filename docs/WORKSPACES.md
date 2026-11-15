@@ -1,5 +1,7 @@
 # Workspaces, invitations and the shared cookbook
 
+Multilingual upgrade: public visibility now requires a complete approved snapshot in the viewer's selected language; there is no public language fallback. Global categories are mapped explicitly, and each language is reviewed independently. See [Multilingual workflows](MULTILINGUAL.md) for the current rules, additive migrations and backup/rollback instructions. Recipe edits, images and translations are restricted to their original author with an editing role.
+
 For the added profile settings, membership leaving, workspace rename/delete and separate Super Admin operations dashboard, see [Administration](ADMINISTRATION.md). A workspace admin/moderator is not a Super Admin. Follow [Backup and restore](BACKUP.md) before migrations/deletions on real data.
 
 The application remains local and has not been deployed. Start it with `npm run dev` as described in the README. `/` is the public landing page for visitors; signed-in users still see their dashboard. `/welcome` always shows the landing page.

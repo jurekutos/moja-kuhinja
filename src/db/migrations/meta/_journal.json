@@ -50,6 +50,20 @@
       "when": 1794759095844,
       "tag": "0006_remarkable_strong_guy",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1794767041668,
+      "tag": "0007_loving_blindfold",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1794768766116,
+      "tag": "0008_high_devos",
+      "breakpoints": true
     }
   ]
 }

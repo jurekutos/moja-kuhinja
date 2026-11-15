@@ -1,8 +1,9 @@
+import { tr } from '../i18n/index.js';
 import { sql,eq,and } from 'drizzle-orm';
 import * as t from '../db/schema.js';
 import { readingDay } from './recipe-reads.js';
 export function superAdminService(db) {
-  function requireOwner(user) {if(!db.select({id:t.users.id}).from(t.users).where(and(eq(t.users.id,user.id),eq(t.users.isSuperAdmin,true))).get())throw Object.assign(new Error('Dostop ni dovoljen.'),{status:403});}
+  function requireOwner(user) {if(!db.select({id:t.users.id}).from(t.users).where(and(eq(t.users.id,user.id),eq(t.users.isSuperAdmin,true))).get())throw Object.assign(new Error(tr("common:sbdabedf54319")),{status:403});}
   const count=table=>db.get(sql`select count(*) as n from ${table}`).n;
   function statistics(user) {
     requireOwner(user);
@@ -12,7 +13,7 @@ export function superAdminService(db) {
       workspaceCreation:db.all(sql`select substr(${t.households.createdAt},1,7) as period,count(*) as count from ${t.households} where ${t.households.createdAt} is not null group by period order by period desc limit 24`),
       recipesByWorkspace:db.all(sql`select h.id,h.name,count(r.id) as count from households h left join recipes r on r.household_id=h.id group by h.id order by count desc,h.id limit 100`),
       meals:db.all(sql`select slot,count(*) as count from ${t.mealPlanEntries} group by slot order by slot`),
-      publications:db.all(sql`select status,count(*) as count from ${t.publications} group by status order by status`),
+      publications:db.all(sql`select language,status,count(*) as count from ${t.publicationTranslations} group by language,status order by language,status`),
       unknownUsers:db.get(sql`select count(*) as n from ${t.users} where ${t.users.createdAt} is null`).n,
       unknownWorkspaces:db.get(sql`select count(*) as n from ${t.households} where ${t.households.createdAt} is null`).n,
     };
@@ -22,7 +23,7 @@ export function superAdminService(db) {
     requireOwner,statistics,
     summary(user) {
       requireOwner(user);const since=new Date(Date.now()-30*86400000).toISOString();
-      return {users:count(t.users),workspaces:count(t.households),memberships:count(t.members),recipes:count(t.recipes),approved:db.get(sql`select count(*) n from ${t.publications} where status='approved'`).n,meals:count(t.mealPlanEntries),recentUsers:db.get(sql`select count(*) n from ${t.users} where created_at >= ${since}`).n,recentWorkspaces:db.get(sql`select count(*) n from ${t.households} where created_at >= ${since}`).n};
+      return {users:count(t.users),workspaces:count(t.households),memberships:count(t.members),recipes:count(t.recipes),approved:db.get(sql`select count(*) n from ${t.publications} p where exists(select 1 from publication_translations v where v.publication_id=p.id and v.status='approved' and v.complete=1)`).n,meals:count(t.mealPlanEntries),recentUsers:db.get(sql`select count(*) n from ${t.users} where created_at >= ${since}`).n,recentWorkspaces:db.get(sql`select count(*) n from ${t.households} where created_at >= ${since}`).n};
     },
     users(user,query={}) {
       requireOwner(user);const q=typeof query.q==='string'?query.q.trim().slice(0,160):'';
@@ -41,6 +42,6 @@ export function superAdminService(db) {
       const ids=rows.map(r=>r.id);const admins=ids.length?db.all(sql`select m.household_id as workspaceId,u.name from household_members m join users u on u.id=m.user_id where m.role='admin' and m.household_id in (${sql.join(ids.map(id=>sql`${id}`),sql`, `)}) order by u.id`):[];
       return {...paging,rows:rows.map(row=>({...row,admins:admins.filter(a=>a.workspaceId===row.id).map(a=>a.name)}))};
     },
-    detail(user,id) {requireOwner(user);const workspace=db.select({id:t.households.id,name:t.households.name,createdAt:t.households.createdAt}).from(t.households).where(eq(t.households.id,id)).get();if(!workspace)throw Object.assign(new Error('Prostor ne obstaja.'),{status:404});return workspace;},
+    detail(user,id) {requireOwner(user);const workspace=db.select({id:t.households.id,name:t.households.name,createdAt:t.households.createdAt}).from(t.households).where(eq(t.households.id,id)).get();if(!workspace)throw Object.assign(new Error(tr("common:sabe67755447b")),{status:404});return workspace;},
   };
 }

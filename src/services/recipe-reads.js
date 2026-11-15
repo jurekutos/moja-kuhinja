@@ -1,3 +1,4 @@
+import { publicVersion,publicSnapshot,privateVersion } from './content-visibility.js';
 import { sql } from 'drizzle-orm';
 import * as t from '../db/schema.js';
 
@@ -7,7 +8,7 @@ export function readingDay(now = new Date()) {
 
 export function recipeReadService(db, clock = () => new Date()) {
   const source = (user, id, publicRecipe) => publicRecipe
-    ? sql`select id from recipe_publications where id=${id} and status='approved'`
+    ? sql`select id from recipe_publications where id=${id} and exists(${publicVersion(id,user.language || 'sl')})`
     : sql`select r.id from recipes r join household_members m on m.household_id=r.household_id where r.id=${id} and m.user_id=${user.id} and r.household_id=${user.householdId}`;
   return {
     record(user, id, publicRecipe = false) {
@@ -25,8 +26,8 @@ export function recipeReadService(db, clock = () => new Date()) {
       const view = ['workspace', 'public'].includes(query.view) ? query.view : 'all';
       const period = query.period === 'month' ? 'month' : 'total';
       const month = readingDay(clock()).slice(0, 7);
-      const visible = sql`select id, title, 'private' as kind from recipes where household_id=${user.householdId} and exists(select 1 from household_members where household_id=${user.householdId} and user_id=${user.id}) and ${Number(view !== 'public')}
-        union all select id,json_extract(snapshot,'$.title') as title,'public' as kind from recipe_publications where status='approved' and ${Number(view !== 'workspace')}`;
+      const visible = sql`select id, coalesce((select title from recipe_translations where id=(${privateVersion(sql`recipes.id`,user.language || 'sl')})),title) as title, 'private' as kind from recipes where household_id=${user.householdId} and exists(select 1 from household_members where household_id=${user.householdId} and user_id=${user.id}) and ${Number(view !== 'public')}
+        union all select id,json_extract((${publicSnapshot(sql`recipe_publications.id`,user.language || 'sl')}),'$.title') as title,'public' as kind from recipe_publications where exists(${publicVersion(sql`recipe_publications.id`,user.language || 'sl')}) and ${Number(view !== 'workspace')}`;
       const counted = sql`with visible as (${visible}) select v.id,v.title,v.kind,count(r.id) as total,coalesce(sum(substr(r.day,1,7)=${month}),0) as month from visible v left join recipe_reads r on (v.kind='private' and r.recipe_id=v.id) or (v.kind='public' and r.publication_id=v.id) group by v.kind,v.id`;
       const totals = db.get(sql`select coalesce(sum(total),0) as total,coalesce(sum(month),0) as month from (${counted})`);
       const order = period === 'month' ? sql`month` : sql`total`;

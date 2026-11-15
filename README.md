@@ -1,5 +1,7 @@
 # Moja kuhinja
 
+The interface now supports Slovenian, English and German, with independent recipe translations, strict language-specific public moderation and multilingual catalogs. Existing installations must stop the server and make a matched backup before applying migrations 0007/0008. See [Multilingual setup, workflows and rollback](docs/MULTILINGUAL.md). These migrations have not been applied to the actual development database during implementation.
+
 For a short explanation of the code and where to make changes, see [Code guide](CODE_GUIDE.md).
 
 Account settings, safe workspace deletion and the separate Super Admin dashboard are described in [Administration](docs/ADMINISTRATION.md). Existing installations must first stop the server, make a [matched backup](docs/BACKUP.md), then run `npm run db:migrate` and `npm run build`. No owner is granted automatically; the guide includes the explicit existing-account bootstrap command. This upgrade has not been applied to the actual development database during implementation.

@@ -5,6 +5,7 @@ export const households = sqliteTable('households', {
   createdAt: text('created_at'),
 }, t => [check('household_planner_meals_valid', sql`${t.plannerMeals} in ('both', 'lunch', 'dinner')`)]);
 export const users = sqliteTable('users', {
+  language: text().notNull().default('sl'),
   id: integer().primaryKey(), name: text().notNull(), email: text().notNull().unique(), passwordHash: text('password_hash').notNull(), isModerator: integer('is_moderator', { mode: 'boolean' }).notNull().default(false),
   isSuperAdmin: integer('is_super_admin', { mode: 'boolean' }).notNull().default(false),
   sessionVersion: integer('session_version').notNull().default(0), createdAt: text('created_at'),
@@ -16,6 +17,8 @@ export const members = sqliteTable('household_members', {
 }, t => [primaryKey({ columns: [t.userId, t.householdId] }), index('members_household_idx').on(t.householdId), check('member_role_valid', sql`${t.role} in ('admin', 'editor', 'viewer')`)]);
 export const sessions = sqliteTable('sessions', { sid: text().primaryKey(), data: text().notNull(), expires: integer().notNull() }, t => [index('sessions_expiry_idx').on(t.expires)]);
 export const recipes = sqliteTable('recipes', {
+  originalLanguage: text('original_language').notNull().default('sl'),
+  contentRevision: integer('content_revision').notNull().default(1),
   id: integer().primaryKey(), householdId: integer('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   title: text().notNull(), description: text().notNull().default(''), prepMinutes: integer('prep_minutes').notNull().default(0), cookMinutes: integer('cook_minutes').notNull().default(0),
   servings: integer().notNull().default(2), sourceType: text('source_type').notNull().default('manual'),
@@ -26,6 +29,7 @@ export const ingredients = sqliteTable('ingredients', {
   id: integer().primaryKey(), householdId: integer('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }), name: text().notNull(), normalizedName: text('normalized_name').notNull(),
 }, t => [uniqueIndex('ingredient_name_unique').on(t.householdId, t.normalizedName)]);
 export const recipeIngredients = sqliteTable('recipe_ingredients', {
+  canonicalIngredientId: integer('canonical_ingredient_id').references(() => globalIngredients.id, { onDelete: 'set null' }),
   id: integer().primaryKey(), recipeId: integer('recipe_id').notNull().references(() => recipes.id, { onDelete: 'cascade' }),
   ingredientId: integer('ingredient_id').references(() => ingredients.id), name: text().notNull(), quantity: text(), unit: text().notNull().default(''), note: text().notNull().default(''), position: integer().notNull(),
 }, t => [index('recipe_ingredients_recipe_idx').on(t.recipeId), index('recipe_ingredients_catalog_idx').on(t.ingredientId)]);
@@ -73,6 +77,7 @@ export const communityFavorites = sqliteTable('community_favorites', {
   publicationId: integer('publication_id').notNull().references(() => publications.id, { onDelete: 'cascade' }),
 }, t => [primaryKey({ columns: [t.userId, t.publicationId] })]);
 export const mealPlanEntries = sqliteTable('meal_plan_entries', {
+  sourceKind: text('source_kind').notNull().default('workspace'),
   id: integer().primaryKey(),
   householdId: integer('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   date: text().notNull(), slot: text().notNull(),
@@ -108,3 +113,41 @@ export const recipeReads = sqliteTable('recipe_reads', {
   check('reads_one_source', sql`(${t.recipeId} is not null and ${t.publicationId} is null) or (${t.recipeId} is null and ${t.publicationId} is not null)`),
 ]);
 // Deleted workspace IDs intentionally have no FK: an audit event must survive deletion.
+export const recipeTranslations = sqliteTable('recipe_translations', {
+  id: integer().primaryKey(), recipeId: integer('recipe_id').notNull().references(() => recipes.id, { onDelete: 'cascade' }),
+  language: text().notNull(), title: text().notNull(), description: text().notNull().default(''),
+  revision: integer().notNull(), reviewed: integer({ mode: 'boolean' }).notNull().default(false),
+  updatedAt: text('updated_at').notNull(),
+}, t => [uniqueIndex('recipe_translation_language').on(t.recipeId,t.language),check('recipe_translation_language_valid',sql`${t.language} in ('sl','en','de')`)]);
+export const translatedIngredients = sqliteTable('translated_ingredients', {
+  translationId: integer('translation_id').notNull().references(() => recipeTranslations.id,{onDelete:'cascade'}),
+  ingredientId: integer('ingredient_id').notNull().references(() => recipeIngredients.id,{onDelete:'cascade'}),
+  name:text().notNull(),note:text().notNull().default(''),
+},t=>[primaryKey({columns:[t.translationId,t.ingredientId]})]);
+export const translatedSteps = sqliteTable('translated_steps', {
+  translationId: integer('translation_id').notNull().references(() => recipeTranslations.id,{onDelete:'cascade'}),
+  stepId: integer('step_id').notNull().references(() => steps.id,{onDelete:'cascade'}),body:text().notNull(),
+},t=>[primaryKey({columns:[t.translationId,t.stepId]})]);
+export const globalCategories = sqliteTable('global_categories', {
+  id:integer().primaryKey(),key:text().notNull().unique(),active:integer({mode:'boolean'}).notNull().default(false),
+});
+export const globalCategoryNames = sqliteTable('global_category_names', {
+  categoryId:integer('category_id').notNull().references(()=>globalCategories.id,{onDelete:'cascade'}),language:text().notNull(),name:text().notNull(),
+},t=>[primaryKey({columns:[t.categoryId,t.language]})]);
+export const globalIngredients = sqliteTable('global_ingredients', {
+  id:integer().primaryKey(),key:text().notNull().unique(),
+});
+export const globalIngredientNames = sqliteTable('global_ingredient_names', {
+  ingredientId:integer('ingredient_id').notNull().references(()=>globalIngredients.id,{onDelete:'cascade'}),language:text().notNull(),name:text().notNull(),
+},t=>[primaryKey({columns:[t.ingredientId,t.language]})]);
+export const ingredientAliases = sqliteTable('ingredient_aliases', {
+  id:integer().primaryKey(),ingredientId:integer('ingredient_id').notNull().references(()=>globalIngredients.id,{onDelete:'cascade'}),language:text().notNull(),name:text().notNull(),normalizedName:text('normalized_name').notNull(),
+},t=>[uniqueIndex('ingredient_alias_unique').on(t.ingredientId,t.language,t.normalizedName)]);
+export const publicationTranslations = sqliteTable('publication_translations', {
+  id:integer().primaryKey(),publicationId:integer('publication_id').notNull().references(()=>publications.id,{onDelete:'cascade'}),
+  language:text().notNull(),status:text().notNull().default('draft'),complete:integer({mode:'boolean'}).notNull().default(false),snapshot:text().notNull(),
+  feedback:text().notNull().default(''),createdAt:text('created_at').notNull(),reviewedAt:text('reviewed_at'),reviewedBy:integer('reviewed_by').references(()=>users.id),
+},t=>[uniqueIndex('publication_translation_language').on(t.publicationId,t.language),index('publication_language_status').on(t.language,t.status,t.complete),check('publication_translation_language_valid',sql`${t.language} in ('sl','en','de')`),check('publication_translation_status_valid',sql`${t.status} in ('draft','pending','approved','rejected')`)]);
+export const publicationCategories = sqliteTable('publication_categories', {
+  publicationId:integer('publication_id').notNull().references(()=>publications.id,{onDelete:'cascade'}),categoryId:integer('category_id').notNull().references(()=>globalCategories.id),
+},t=>[primaryKey({columns:[t.publicationId,t.categoryId]})]);

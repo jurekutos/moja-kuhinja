@@ -27,7 +27,8 @@
     "backup": "node --env-file=.env scripts/backup.js",
     "super-admin:grant": "node --env-file=.env scripts/grant-super-admin.js",
     "test": "node --test --test-concurrency=1 tests/*.test.js",
-    "test:browser": "node scripts/browser-smoke.js"
+    "test:browser": "node scripts/browser-smoke.js",
+    "test:browser:i18n": "node scripts/browser-i18n.js"
   },
   "dependencies": {
     "argon2": "^0.44.0",
@@ -39,6 +40,7 @@
     "express-rate-limit": "^8.2.1",
     "express-session": "^1.18.2",
     "helmet": "^8.1.0",
+    "i18next": "^27.1.2",
     "multer": "^2.0.2",
     "sharp": "^0.35.5",
     "zod": "^4.1.12"

@@ -1,3 +1,5 @@
+import { tr } from '../i18n/index.js';
+import { globalCatalogService } from '../services/global-catalog.js';
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { verifyCsrf,requireAdmin,requireSuperAdmin } from '../middleware/security.js';
@@ -10,8 +12,8 @@ import { superAdminController } from '../controllers/super-admin.js';
 export function accountAdminRoutes(db,workspaces,config) {
   const router=Router();const accounts=accountService(db);const deletion=workspaceDeletionService(db,config.uploadDir);
   const settings=settingsController(accounts);const workspace=workspaceAdminController(workspaces,accounts,deletion);const admin=superAdminController(superAdminService(db),workspaces,deletion,accounts);
-  for(const param of ['workspaceId','userId'])router.param(param,(req,res,next,value)=>{if(!/^[1-9]\d*$/.test(value)||!Number.isSafeInteger(Number(value)))return res.status(404).render('error',{title:'Ni najdeno',message:'Zapis ne obstaja.'});next();});
-  const passwordLimit=rateLimit({windowMs:15*60000,limit:10,standardHeaders:'draft-8',legacyHeaders:false,handler:(req,res)=>res.status(429).render('error',{title:'Preveč poskusov',message:'Preveč poskusov spremembe gesla. Poskusite znova čez 15 minut.'})});
+  for(const param of ['workspaceId','userId'])router.param(param,(req,res,next,value)=>{if(!/^[1-9]\d*$/.test(value)||!Number.isSafeInteger(Number(value)))return res.status(404).render('error',{title:tr("auth:s5dbe36ac6d2d"),message:tr("auth:s8c65e70faed8")});next();});
+  const passwordLimit=rateLimit({windowMs:15*60000,limit:10,standardHeaders:'draft-8',legacyHeaders:false,handler:(req,res)=>res.status(429).render('error',{title:tr("auth:s4b07fb3a8a72"),message:tr("auth:s778af7087f72")})});
   router.get('/settings',settings.page);
   router.post('/settings/profile',verifyCsrf,settings.name);
   router.post('/settings/password',verifyCsrf,passwordLimit,settings.password);
@@ -21,6 +23,9 @@ export function accountAdminRoutes(db,workspaces,config) {
   router.get('/workspace/delete',requireAdmin,workspace.deletePage);
   router.post('/workspace/delete',verifyCsrf,requireAdmin,workspace.remove);
   router.use('/super-admin',requireSuperAdmin);
+  const catalog=globalCatalogService(db);
+  router.get('/super-admin/catalog/:kind',(req,res)=>{if(!['categories','ingredients'].includes(req.params.kind))throw Object.assign(new Error(tr("auth:se3ebaa16dd9d")),{status:404});res.render('super-admin/catalog',{title:tr('common:catalog'),kind:req.params.kind,rows:catalog.adminList(req.user,req.params.kind),duplicates:catalog.duplicates(req.user,req.params.kind)});});
+  router.post('/super-admin/catalog/:kind',verifyCsrf,(req,res)=>{catalog.save(req.user,req.params.kind,req.body);req.session.flash=tr('common:catalogSaved');res.redirect(`/super-admin/catalog/${req.params.kind}`);});
   router.get('/super-admin',admin.dashboard);
   router.get('/super-admin/users',admin.users);
   router.get('/super-admin/workspaces',admin.workspaces);
