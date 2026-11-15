@@ -38,7 +38,7 @@ before(async()=>{
   c.db.insert(t.members).values([{userId:1,householdId:1,role:'admin'},{userId:2,householdId:2,role:'admin'}]).run();
   app=createApp({...c,config:{secret:'synthetic-language-secret-'.repeat(3),production:false,trustProxy:false,uploadDir:path.join(root,'uploads')}});
   recipes=recipeService(c.db);translations=recipeTranslationService(c.db,recipes);globalCatalog=globalCatalogService(c.db);catalog=recipeCatalog(c.db,recipes);community=communityService(c.db,recipes,imageService(c.db,path.join(root,'uploads')),path.join(root,'uploads'));
-  agent=request.agent(app);const login=await agent.get('/login');await agent.post('/login').type('form').send({_csrf:token(login),email:'i18n1@example.test',password:'Synthetic-password'}).expect(302);csrf=token(await agent.get('/settings'));
+  agent=request.agent(app);const login=await agent.get('/sl/login');await agent.post('/sl/login').type('form').send({_csrf:token(login),email:'i18n1@example.test',password:'Synthetic-password'}).expect(302);csrf=token(await agent.get('/sl/settings'));
 });
 after(async()=>{app.locals.sessionStore.close();c.sqlite.close();await fs.rm(root,{recursive:true,force:true});});
 
@@ -62,17 +62,17 @@ test('every statically referenced server, EJS and browser translation key exists
   }
 });
 test('anonymous cookie selection, CSRF, localized login/errors and persisted account preference',async()=>{
-  const anonymous=request.agent(app);let page=await anonymous.get('/login');
-  await anonymous.post('/language').type('form').send({language:'de'}).expect(403);
-  await anonymous.post('/language').type('form').send({_csrf:token(page),language:'de'}).expect(302);
-  page=await anonymous.get('/login');assert.match(page.text,/<html lang="de">/);assert.match(page.text,/Anmelden/);
-  const invalid=await anonymous.post('/login').type('form').send({_csrf:token(page),email:'invalid@example.test',password:'wrong'}).expect(422);assert.match(invalid.text,/E-Mail-Adresse oder Passwort ist falsch/);
-  await agent.post('/language').type('form').send({_csrf:csrf,language:'en',returnTo:'//untrusted.test'}).expect(302).expect('Location','/settings');
+  const anonymous=request.agent(app);let page=await anonymous.get('/de/login');
+  await anonymous.post('/sl/language').type('form').send({language:'de'}).expect(403);
+  await anonymous.post('/sl/language').type('form').send({_csrf:token(page),language:'de'}).expect(302);
+  page=await anonymous.get('/de/login');assert.match(page.text,/<html lang="de">/);assert.match(page.text,/Anmelden/);
+  const invalid=await anonymous.post('/de/login').type('form').send({_csrf:token(page),email:'invalid@example.test',password:'wrong'}).expect(422);assert.match(invalid.text,/E-Mail-Adresse oder Passwort ist falsch/);
+  await agent.post('/sl/language').type('form').send({_csrf:csrf,language:'en',returnTo:'//untrusted.test'}).expect(302).expect('Location','/en/settings');
   assert.equal(c.db.select().from(t.users).where(eq(t.users.id,1)).get().language,'en');
-  page=await agent.get('/settings');assert.match(page.text,/<html lang="en">/);assert.match(page.text,/Current password/);
-  const second=request.agent(app);const login=await second.get('/login');await second.post('/login').type('form').send({_csrf:token(login),email:'i18n1@example.test',password:'Synthetic-password'}).expect(302);assert.match((await second.get('/settings')).text,/<html lang="en">/);
-  await agent.post('/language').type('form').send({_csrf:csrf,language:'fr'}).expect(422);
-  await agent.post('/language').type('form').send({_csrf:csrf,language:'sl'}).expect(302);
+  page=await agent.get('/en/settings');assert.match(page.text,/<html lang="en">/);assert.match(page.text,/Current password/);
+  const second=request.agent(app);const login=await second.get('/sl/login');await second.post('/sl/login').type('form').send({_csrf:token(login),email:'i18n1@example.test',password:'Synthetic-password'}).expect(302);assert.match((await second.get('/en/settings')).text,/<html lang="en">/);
+  await agent.post('/sl/language').type('form').send({_csrf:csrf,language:'fr'}).expect(422);
+  await agent.post('/sl/language').type('form').send({_csrf:csrf,language:'sl'}).expect(302);
   const validation=languageContext.run({language:'de'},()=>parseRecipe({title:'',description:'',prepMinutes:0,cookMinutes:0,servings:2,notes:'',sourceType:'manual',sourceUrl:'',sourceDescription:'',status:'draft',categories:'',ingredientsJson:'[]',stepsJson:'[]'}));
   assert.ok(validation.errors.some(v=>v.includes('Geben Sie einen Rezepttitel ein')));
 });
@@ -140,11 +140,11 @@ test('public language approval gates direct links, images, favorites, copying, s
   const copy=await community.copy(publicationId,outsider);assert.equal(recipes.get(copy,2,2).originalLanguage,'de');
   recipes.save({...sample('Private changed'),ingredients:[{...sample().ingredients[0],quantity:'8'}]},owner,id);
   assert.equal(community.get(publicationId,outsider).recipe.title,'Zwiebelsuppe');assert.equal(community.get(publicationId,outsider).recipe.ingredients[0].quantity,'0.125');
-  await agent.post('/language').type('form').send({_csrf:csrf,language:'en'}).expect(302);
-  await agent.get(`/community/${publicationId}`).expect(404);await agent.get(`/community/${publicationId}/images/0`).expect(404);
-  await agent.post(`/community/${publicationId}/copy`).type('form').send({_csrf:csrf}).expect(404);
-  const publicPage=await agent.get('/recipes?view=public').expect(200);assert.ok(!publicPage.text.includes('Skrivna slovenska javna jed'));
-  await agent.post('/language').type('form').send({_csrf:csrf,language:'sl'}).expect(302);
+  await agent.post('/sl/language').type('form').send({_csrf:csrf,language:'en'}).expect(302);
+  await agent.get(`/en/community/${publicationId}`).expect(404);await agent.get(`/en/community/${publicationId}/images/0`).expect(404);
+  await agent.post(`/en/community/${publicationId}/copy`).type('form').send({_csrf:csrf}).expect(404);
+  const publicPage=await agent.get('/en/recipes?view=public').expect(200);assert.ok(!publicPage.text.includes('Skrivna slovenska javna jed'));
+  await agent.post('/sl/language').type('form').send({_csrf:csrf,language:'sl'}).expect(302);
   community.review(publicationId,owner,'rejected','Withdrawal','de');assert.throws(()=>community.get(publicationId,outsider),e=>e.status===404);assert.equal(community.get(publicationId,owner).status,'approved');
 });
 test('public counts and pagination are calculated after the language filter, including incomplete snapshots',()=>{

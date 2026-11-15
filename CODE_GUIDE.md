@@ -136,3 +136,7 @@ Keep source code, migrations, the compiled stylesheet and `package-lock.json` in
 ## Recipe reading statistics
 
 See [docs/READING_STATS.md](docs/READING_STATS.md) for daily counting rules, statistics filters, the service/table locations and the migration commands needed to enable the feature.
+# Verification maintenance
+
+The verification run on 15 November 2026 passed all 72 server tests, the production CSS build and both browser suites. Public website regression coverage lives in `tests/public-site.test.js`; browser workflows live in `scripts/browser-smoke.js` and `scripts/browser-i18n.js`. Tests request language-prefixed URLs explicitly and use isolated temporary databases. Publication controls are exercised through My profile. When changing localized navigation or approval visibility, update these workflows alongside the implementation. See `docs/PUBLIC_WEBSITE.md` for the checks and their limits. Run checks only when explicitly requested, as required by `AGENTS.md`.
+

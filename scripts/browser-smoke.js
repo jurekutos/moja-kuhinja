@@ -29,7 +29,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   page.setDefaultTimeout(10000);
   const errors = []; page.on('pageerror', error => errors.push(error.message));
-  const base = `http://127.0.0.1:${server.address().port}`;
+  const base = `http://127.0.0.1:${server.address().port}/sl`;
   await page.goto(base + '/'); assert.equal(await page.locator('.landing-hero').count(), 1);
   await fs.mkdir('.runtime/screenshots', { recursive: true });
   await page.screenshot({ path: '.runtime/screenshots/landing-desktop.png', fullPage: true });
@@ -82,22 +82,24 @@ try {
   assert.equal(await page.locator('.card-heart button').getAttribute('aria-pressed'), 'false');
   await page.locator('.card-heart button').click(); await page.waitForURL(filterUrl);
   assert.equal(await page.locator('.card-heart button').getAttribute('aria-pressed'), 'true');
-  await page.goto(base + '/recipes/' + id);
+  await page.goto(base + '/settings');
+  await page.locator('#my-recipes summary').click();
   page.once('dialog', dialog => dialog.accept());
-  await page.getByRole('button', { name: 'Pošlji v skupno kuharico', exact: true }).click(); await page.waitForURL(/\/community\/\d+(\?.*)?$/);
-  const communityUrl = page.url();
+  await page.getByRole('button', { name: 'Pošlji v skupno kuharico', exact: true }).click();await page.waitForURL(/\/settings\?recipePage=1#my-recipes$/);
+  const publicationLink=page.locator('#my-recipes a[href*="reviewLanguage"]').first();
+  const communityUrl=new URL(await publicationLink.getAttribute('href'),base).href;await page.goto(communityUrl);
   await page.getByRole('button', { name: 'Odobri objavo', exact: true }).click(); await page.waitForURL(base + '/admin/reviews');
   await page.goto(base + '/community'); assert.equal(await page.locator('.recipe-card').count(), 1);
   await page.locator('.card-heart button').click(); await page.waitForURL(base + '/community');
   assert.equal(await page.locator('.card-heart button').getAttribute('aria-pressed'), 'true');
-  await page.goto(base + '/recipes?view=all'); assert.equal(await page.locator('.recipe-card').count(), 2);
+  await page.goto(base + '/recipes?view=all'); assert.equal(await page.locator('.recipe-card').count(), 1);
   await page.getByRole('link', { name: 'Samo javni', exact: true }).click(); assert.equal(await page.locator('.recipe-card').count(), 1);
   const publicViewUrl = page.url();
   await page.locator('.card-heart button').click(); await page.waitForURL(publicViewUrl);
   assert.equal(await page.locator('.card-heart button').getAttribute('aria-pressed'), 'false');
   await page.getByLabel('Sestavina', { exact: true }).fill('PIŠČANEC'); await page.getByRole('button', { name: 'Poišči', exact: true }).click();
   assert.equal(new URL(page.url()).searchParams.get('view'), 'public'); assert.equal(await page.locator('.recipe-card').count(), 1);
-  await page.getByRole('link', { name: 'Vsi recepti', exact: true }).click(); assert.equal(await page.locator('.recipe-card').count(), 2);
+  await page.getByRole('link', { name: 'Vsi recepti', exact: true }).click(); assert.equal(await page.locator('.recipe-card').count(), 1);
   await page.getByRole('link', { name: 'Moj prostor', exact: true }).click(); assert.equal(await page.locator('.recipe-card').count(), 1);
   await page.goto(communityUrl); await page.getByRole('button', { name: 'Kopiraj v moj prostor', exact: true }).click(); await page.waitForURL(/\/recipes\/\d+$/);
   const copyId = page.url().match(/recipes\/(\d+)/)[1];
@@ -140,14 +142,14 @@ try {
   await page.screenshot({ path: '.runtime/screenshots/desktop.png', fullPage: true });
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 844 });
-    for (const url of ['/', '/recipes', '/recipes/statistics', '/recipes/statistics?view=public&period=month', '/recipes?view=all', '/recipes?view=public', `/recipes/${id}`, `/recipes/${id}/edit`, `/recipes/${id}/cook`, '/planner', '/planner/meal?date=2026-11-16&slot=lunch', '/workspace', '/settings', '/workspace/delete', '/super-admin', '/super-admin/users', '/super-admin/workspaces', '/super-admin/workspaces/1', '/super-admin/statistics', '/admin/invitations', '/admin/reviews', '/community', new URL(communityUrl).pathname]) {
+    for (const url of ['/', '/recipes', '/recipes/statistics', '/recipes/statistics?view=public&period=month', '/recipes?view=all', '/recipes?view=public', `/recipes/${id}`, `/recipes/${id}/edit`, `/recipes/${id}/cook`, '/planner', '/planner/meal?date=2026-11-16&slot=lunch', '/workspace', '/settings', '/workspace/delete', '/super-admin', '/super-admin/users', '/super-admin/workspaces', '/super-admin/workspaces/1', '/super-admin/statistics', '/admin/invitations', '/admin/reviews', '/community', new URL(communityUrl).pathname.replace(/^\/sl/,'')]) {
       await page.goto(base + url); assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Horizontal overflow at ${width}px: ${url}`);
     }
   }
   await page.setViewportSize({ width: 390, height: 844 }); await page.goto(base + '/'); await page.screenshot({ path: '.runtime/screenshots/mobile.png', fullPage: true });
   assert.deepEqual(errors, []);
   await page.goto(base + '/recipes/' + id);
-  page.once('dialog', dialog => dialog.dismiss()); await page.getByRole('button', { name: 'Izbriši recept', exact: true }).click(); assert.equal(new URL(page.url()).pathname, '/recipes/' + id);
+  page.once('dialog', dialog => dialog.dismiss()); await page.getByRole('button', { name: 'Izbriši recept', exact: true }).click(); assert.equal(new URL(page.url()).pathname, '/sl/recipes/' + id);
   page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', { name: 'Izbriši recept', exact: true }).click(); await page.waitForURL(base + '/recipes'); assert.equal(await page.locator('.recipe-card').count(), 1);
   await page.goto(base + '/recipes/' + copyId); page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', { name: 'Izbriši recept', exact: true }).click(); await page.waitForURL(base + '/recipes'); assert.equal(await page.locator('.recipe-card').count(), 0);
   await page.goto(base+'/settings');await page.getByLabel('Trenutno geslo',{exact:true}).fill(password);await page.getByLabel('Novo geslo',{exact:true}).fill(password+'new');await page.getByLabel('Ponovite novo geslo',{exact:true}).fill(password+'new');await page.getByRole('button',{name:'Spremeni geslo',exact:true}).click();await page.waitForURL(base+'/settings');assert.ok(await page.getByRole('status').textContent());

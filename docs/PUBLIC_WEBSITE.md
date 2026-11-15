@@ -85,8 +85,15 @@ Public recipes without approved EN/DE versions correctly remain absent in those 
 - `src/views/layouts/header.ejs`, `footer.ejs`, `src/views/landing.ejs`, `src/views/components/workspace-toolbar.ejs`: existing layout/landing reuse and website/app navigation.
 - `src/views/public/*`, new `public-header`, `public-footer`, `public-card`, `seo` partials: public presentation and search/recipe information.
 - `src/locales/{sl,en,de}/public.json`: feature-specific translated interface, metadata and informational text.
-- `src/styles.css`, `public/css/app.css`: scoped website styles, kept synchronized directly without running a build.
+- `src/styles.css`, `public/css/app.css`: scoped website styles and compiled production CSS; profile heading wrapping also prevents German text overflowing narrow screens.
 
 ## Verification status
 
-**Tests, browser automation, builds, linters and other automated checks were not run**, following the user's latest instruction. No new test results are claimed and no real user data was migrated or reset. The implementation was reviewed by reading the affected code. Runtime behavior, responsive rendering and SEO output still need verification when the user authorizes it; existing integration/browser expectations also need updating for the recent localized routes and the new public community GET behavior.
+Initially implemented without automated checks as requested. The user subsequently authorized verification, completed on 15 November 2026:
+
+- `npm test`: 72 passed, zero failures or skipped tests.
+- `npm run build`: production CSS compiled successfully.
+- `npm run test:browser`: desktop/mobile application flows passed, including profile publication and combined-list deduplication.
+- `npm run test:browser:i18n`: language preferences, localized routes, translation editing, per-language publication approval and EN/DE layouts at 1440/390/320px passed.
+
+Integration and browser expectations now use localized URLs and the current public/private navigation. A genuine German profile heading overflow at 320px was fixed. `tests/public-site.test.js` verifies anonymous approved-language visibility, pending-language denial, canonical redirects independent of the Host header, safe Recipe JSON-LD, exclusion of private snapshot fields, sitemap withdrawal and authenticated access boundaries. All fixture databases and uploads are temporary; real user data was not migrated or reset. These checks do not constitute a full SEO, accessibility or cross-browser audit. Future checks still require an explicit user request under `AGENTS.md`.

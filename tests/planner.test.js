@@ -22,7 +22,7 @@ const password='planner-test-pass';
 const csrf=response=>response.text.match(/name="_csrf" value="([a-f0-9]+)"/)[1];
 const sample=title=>({title,description:'',prepMinutes:5,cookMinutes:10,servings:2,notes:'',sourceType:'manual',sourceUrl:'',sourceDescription:'',status:'published',categories:['Kosilo'],ingredients:[{name:'Testenine',quantity:'200',unit:'g',note:''}],steps:['Skuhajte testenine.']});
 const meal=(overrides={})=>({date:'2026-11-16',slot:'lunch',recipe:`workspace:${recipeId}`,servings:'4',revision:'',...overrides});
-async function login(agent,email) { const page=await agent.get('/login'); await agent.post('/login').type('form').send({_csrf:csrf(page),email,password}).expect(302); return csrf(await agent.get('/planner')); }
+async function login(agent,email) { const page=await agent.get('/sl/login'); await agent.post('/sl/login').type('form').send({_csrf:csrf(page),email,password}).expect(302); return csrf(await agent.get('/sl/planner')); }
 before(async()=>{
   directory=await fs.mkdtemp(path.join(os.tmpdir(),'moja-planner-')); c=openDatabase(path.join(directory,'db.sqlite'),true);
   c.db.insert(t.households).values([{id:1,name:'Dom'},{id:2,name:'Drug dom'}]).run();
@@ -43,49 +43,49 @@ test('planner dates handle Monday/Sunday, year boundaries, leap days, DST and Lj
   for(const date of ['2026-02-29','2026-04-31','not-a-date','2026-1-01']) assert.equal(validDate(date),false);
 });
 test('planner requires authentication, membership, editor permission and CSRF',async()=>{
-  await request(app).get('/planner').expect(302).expect('Location','/login');
-  await admin.post('/planner/save').type('form').send(meal()).expect(403);
-  await viewer.get('/planner?week=2026-11-16').expect(200);await viewer.get('/planner/meal?date=2026-11-16&slot=lunch').expect(403);
-  await viewer.post('/planner/save').type('form').send({...meal(),_csrf:csrfV}).expect(403);
-  await viewer.post('/planner/remove').type('form').send({...meal(),_csrf:csrfV}).expect(403);
+  await request(app).get('/sl/planner').expect(302).expect('Location','/sl/login');
+  await admin.post('/sl/planner/save').type('form').send(meal()).expect(403);
+  await viewer.get('/sl/planner?week=2026-11-16').expect(200);await viewer.get('/sl/planner/meal?date=2026-11-16&slot=lunch').expect(403);
+  await viewer.post('/sl/planner/save').type('form').send({...meal(),_csrf:csrfV}).expect(403);
+  await viewer.post('/sl/planner/remove').type('form').send({...meal(),_csrf:csrfV}).expect(403);
   assert.throws(()=>planner.week({id:1,householdId:2},'2026-11-16'),error=>error.status===403);
 });
 test('shared weekly plan saves, edits and removes meals without changing recipe servings or quantities',async()=>{
-  await admin.post('/planner/save').type('form').send({...meal(),_csrf:csrfA}).expect(302).expect('Location','/planner?week=2026-11-16#day-2026-11-16');
+  await admin.post('/sl/planner/save').type('form').send({...meal(),_csrf:csrfA}).expect(302).expect('Location','/sl/planner?week=2026-11-16#day-2026-11-16');
   const entry=planner.get(owner,'2026-11-16','lunch');assert.equal(entry.servings,4);
-  const page=await editor.get('/planner?week=2026-11-16').expect(200);assert.match(page.text,/Testenine za jedilnik/);assert.match(page.text,/servings=4/);
-  const editPage=await editor.get('/planner/meal?date=2026-11-16&slot=lunch').expect(200);assert.match(editPage.text,/name="servings"[^>]*value="4"/);
-  await editor.post('/planner/save').type('form').send({...meal({servings:'6',revision:entry.revision}),_csrf:csrfE}).expect(302);
+  const page=await editor.get('/sl/planner?week=2026-11-16').expect(200);assert.match(page.text,/Testenine za jedilnik/);assert.match(page.text,/servings=4/);
+  const editPage=await editor.get('/sl/planner/meal?date=2026-11-16&slot=lunch').expect(200);assert.match(editPage.text,/name="servings"[^>]*value="4"/);
+  await editor.post('/sl/planner/save').type('form').send({...meal({servings:'6',revision:entry.revision}),_csrf:csrfE}).expect(302);
   assert.equal(planner.get(owner,'2026-11-16','lunch').servings,6);
   assert.equal(recipes.get(recipeId,1,1).servings,2);assert.equal(recipes.get(recipeId,1,1).ingredients[0].quantity,'200');
-  await viewer.get('/planner?week=2026-11-16').expect(200);
-  const current=planner.get(owner,'2026-11-16','lunch');await admin.post('/planner/remove').type('form').send({_csrf:csrfA,date:current.date,slot:current.slot,revision:current.revision}).expect(302);assert.equal(planner.get(owner,current.date,current.slot),null);
+  await viewer.get('/sl/planner?week=2026-11-16').expect(200);
+  const current=planner.get(owner,'2026-11-16','lunch');await admin.post('/sl/planner/remove').type('form').send({_csrf:csrfA,date:current.date,slot:current.slot,revision:current.revision}).expect(302);assert.equal(planner.get(owner,current.date,current.slot),null);
 });
 test('planner rejects invalid dates, slots, sources and serving counts and excludes drafts from choices',async()=>{
   const draft=recipes.save({...sample('Osnutek jedilnika'),status:'draft'},owner);
-  const picker=await admin.get('/planner/meal?date=2026-11-16&slot=dinner').expect(200);assert.ok(!picker.text.includes('Osnutek jedilnika'));assert.ok(!picker.text.includes('Tuj zasebni recept'));
+  const picker=await admin.get('/sl/planner/meal?date=2026-11-16&slot=dinner').expect(200);assert.ok(!picker.text.includes('Osnutek jedilnika'));assert.ok(!picker.text.includes('Tuj zasebni recept'));
   for(const overrides of [{date:'2026-02-30'},{slot:'breakfast'},{servings:'0'},{servings:'101'},{servings:'1.5'},{recipe:'bad'},{revision:'bad'}]) assert.throws(()=>parseMeal(meal(overrides)),error=>error.status===422);
-  const result=await admin.post('/planner/save').type('form').send({...meal({servings:'0'}),_csrf:csrfA}).expect(422);assert.match(result.text,/Število porcij mora/);assert.match(result.text,/value="0"/);
-  await admin.post('/planner/save').type('form').send({...meal({recipe:`workspace:${draft}`}),_csrf:csrfA}).expect(404);
-  await admin.post('/planner/save').type('form').send({...meal({recipe:`workspace:${foreignId}`}),_csrf:csrfA}).expect(404);
-  await admin.get('/planner?week=bad').expect(422);await admin.get('/planner/meal?date=2026-11-16&slot=invalid').expect(422);
+  const result=await admin.post('/sl/planner/save').type('form').send({...meal({servings:'0'}),_csrf:csrfA}).expect(422);assert.match(result.text,/Število porcij mora/);assert.match(result.text,/value="0"/);
+  await admin.post('/sl/planner/save').type('form').send({...meal({recipe:`workspace:${draft}`}),_csrf:csrfA}).expect(404);
+  await admin.post('/sl/planner/save').type('form').send({...meal({recipe:`workspace:${foreignId}`}),_csrf:csrfA}).expect(404);
+  await admin.get('/sl/planner?week=bad').expect(422);await admin.get('/sl/planner/meal?date=2026-11-16&slot=invalid').expect(422);
 });
 test('public recipes can be planned directly; private source and plan ownership never cross workspace boundaries',async()=>{
-  await admin.post('/planner/save').type('form').send({...meal({slot:'dinner',recipe:`public:${publicId}`,servings:'3'}),_csrf:csrfA}).expect(302);
+  await admin.post('/sl/planner/save').type('form').send({...meal({slot:'dinner',recipe:`public:${publicId}`,servings:'3'}),_csrf:csrfA}).expect(302);
   const entry=planner.get(owner,'2026-11-16','dinner');assert.equal(entry.publicationId,publicId);assert.equal(entry.recipeId,null);
-  const outsidePage=await other.get('/planner?week=2026-11-16').expect(200);assert.ok(!outsidePage.text.includes('Javni recept'));
-  await other.post('/planner/remove').type('form').send({_csrf:csrfO,date:entry.date,slot:entry.slot,revision:entry.revision}).expect(409);
+  const outsidePage=await other.get('/sl/planner?week=2026-11-16').expect(200);assert.ok(!outsidePage.text.includes('Javni recept'));
+  await other.post('/sl/planner/remove').type('form').send({_csrf:csrfO,date:entry.date,slot:entry.slot,revision:entry.revision}).expect(409);
   assert.equal(planner.get(owner,entry.date,entry.slot).revision,entry.revision);
   c.db.update(t.publications).set({status:'rejected'}).where(eq(t.publications.id,publicId)).run();
   assert.equal(planner.get(owner,entry.date,entry.slot).available,false);
-  await admin.post('/planner/save').type('form').send({...meal({date:'2026-11-17',recipe:`public:${publicId}`}),_csrf:csrfA}).expect(404);
+  await admin.post('/sl/planner/save').type('form').send({...meal({date:'2026-11-17',recipe:`public:${publicId}`}),_csrf:csrfA}).expect(404);
 });
 test('concurrent changes cannot overwrite or delete newer meal plans',async()=>{
   planner.save(owner,meal({date:'2026-11-18'}));
-  await editor.post('/planner/save').type('form').send({...meal({date:'2026-11-18'}),_csrf:csrfE}).expect(409);
+  await editor.post('/sl/planner/save').type('form').send({...meal({date:'2026-11-18'}),_csrf:csrfE}).expect(409);
   const old=planner.get(owner,'2026-11-18','lunch');planner.save(collaborator,meal({date:old.date,revision:old.revision,servings:'8'}));
-  await admin.post('/planner/save').type('form').send({...meal({date:old.date,revision:old.revision}),_csrf:csrfA}).expect(409);
-  await admin.post('/planner/remove').type('form').send({_csrf:csrfA,date:old.date,slot:old.slot,revision:old.revision}).expect(409);
+  await admin.post('/sl/planner/save').type('form').send({...meal({date:old.date,revision:old.revision}),_csrf:csrfA}).expect(409);
+  await admin.post('/sl/planner/remove').type('form').send({_csrf:csrfA,date:old.date,slot:old.slot,revision:old.revision}).expect(409);
   assert.equal(planner.get(owner,old.date,old.slot).servings,8);
   assert.equal(c.db.select().from(t.mealPlanEntries).all().filter(e=>e.date===old.date && e.slot===old.slot).length,1);
 });
@@ -99,21 +99,21 @@ test('deleted recipes leave a visible unavailable meal which can be replaced',()
 test('meal visibility is shared per workspace, persists across weeks and preserves hidden meals',async()=>{
   planner.save(owner,meal({date:'2026-11-20',slot:'lunch'}));planner.save(owner,meal({date:'2026-11-20',slot:'dinner'}));
   const before=c.db.select().from(t.mealPlanEntries).all();
-  await admin.post('/planner/preferences').type('form').send({_csrf:csrfA,week:'2026-11-16',meals:'lunch',householdId:2}).expect(302).expect('Location','/planner?week=2026-11-16');
+  await admin.post('/sl/planner/preferences').type('form').send({_csrf:csrfA,week:'2026-11-16',meals:'lunch',householdId:2}).expect(302).expect('Location','/sl/planner?week=2026-11-16');
   const week=planner.week(collaborator,'2026-11-16');assert.equal(week.totalSlots,7);assert.equal(week.plannerMeals,'lunch');assert.ok(week.days.every(day=>day.meals.length===1 && day.meals[0].slot==='lunch'));assert.ok(week.hiddenCount>0);
   assert.equal(planner.week(owner,'2026-11-23').plannerMeals,'lunch');assert.equal(planner.week(outsider,'2026-11-16').plannerMeals,'both');
-  const page=await viewer.get('/planner?week=2026-11-16').expect(200);assert.equal((page.text.match(/class="planner-slot"/g)||[]).length,7);
+  const page=await viewer.get('/sl/planner?week=2026-11-16').expect(200);assert.equal((page.text.match(/class="planner-slot"/g)||[]).length,7);
   assert.deepEqual(c.db.select().from(t.mealPlanEntries).all(),before);
-  await admin.get('/planner/meal?date=2026-11-20&slot=dinner').expect(422);
-  await admin.post('/planner/save').type('form').send({...meal({date:'2026-11-21',slot:'dinner'}),_csrf:csrfA}).expect(422);
-  await editor.post('/planner/preferences').type('form').send({_csrf:csrfE,week:'2026-11-16',meals:'dinner'}).expect(302);assert.ok(planner.week(owner,'2026-11-16').days.every(day=>day.meals[0].slot==='dinner'));
-  await admin.post('/planner/preferences').type('form').send({_csrf:csrfA,week:'2026-11-16',meals:'both'}).expect(302);
+  await admin.get('/sl/planner/meal?date=2026-11-20&slot=dinner').expect(422);
+  await admin.post('/sl/planner/save').type('form').send({...meal({date:'2026-11-21',slot:'dinner'}),_csrf:csrfA}).expect(422);
+  await editor.post('/sl/planner/preferences').type('form').send({_csrf:csrfE,week:'2026-11-16',meals:'dinner'}).expect(302);assert.ok(planner.week(owner,'2026-11-16').days.every(day=>day.meals[0].slot==='dinner'));
+  await admin.post('/sl/planner/preferences').type('form').send({_csrf:csrfA,week:'2026-11-16',meals:'both'}).expect(302);
   assert.equal(planner.week(owner,'2026-11-16').totalSlots,14);assert.deepEqual(c.db.select().from(t.mealPlanEntries).all(),before);
 });
 test('planner preferences require editor permission, CSRF and a valid meal selection',async()=>{
-  await request(app).post('/planner/preferences').type('form').send({week:'2026-11-16',meals:'lunch'}).expect(302).expect('Location','/login');
-  await admin.post('/planner/preferences').type('form').send({week:'2026-11-16',meals:'lunch'}).expect(403);
-  await viewer.post('/planner/preferences').type('form').send({_csrf:csrfV,week:'2026-11-16',meals:'lunch'}).expect(403);
-  for(const meals of ['', 'none','breakfast']) await admin.post('/planner/preferences').type('form').send({_csrf:csrfA,week:'2026-11-16',meals}).expect(422);
+  await request(app).post('/sl/planner/preferences').type('form').send({week:'2026-11-16',meals:'lunch'}).expect(302).expect('Location','/sl/login');
+  await admin.post('/sl/planner/preferences').type('form').send({week:'2026-11-16',meals:'lunch'}).expect(403);
+  await viewer.post('/sl/planner/preferences').type('form').send({_csrf:csrfV,week:'2026-11-16',meals:'lunch'}).expect(403);
+  for(const meals of ['', 'none','breakfast']) await admin.post('/sl/planner/preferences').type('form').send({_csrf:csrfA,week:'2026-11-16',meals}).expect(422);
   assert.equal(planner.week(owner,'2026-11-16').plannerMeals,'both');
 });
