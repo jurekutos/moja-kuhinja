@@ -175,5 +175,9 @@
   "unitPiece": "piece",
   "unitTablespoon": "tbsp",
   "unitTeaspoon": "tsp",
-  "noWorkspace": "No workspace"
+  "noWorkspace": "No workspace",
+  "languagePreferenceHelp": "Your chosen language applies to the interface and public cookbook. Private recipes remain accessible in every language.",
+  "publicationDraftSaved": "Public publication draft saved.",
+  "alsoPublic": "Also public",
+  "viewPublicVersion": "View public version"
 }

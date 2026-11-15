@@ -24,5 +24,17 @@
   "s1154fa98c18c": "Meine Bereiche",
   "sb18a2d143658": "Sie sind derzeit in keinem Bereich Mitglied. Ihr Konto bleibt aktiv. Öffnen Sie zum Beitritt eine gültige Einladung.",
   "s2ab52f23b9f3": "Gemeinsames Kochbuch entdecken →",
-  "s082fed88ca26": "· Mitglieder:"
+  "s082fed88ca26": "· Mitglieder:",
+  "myRecipesAndPublications": "Meine Rezepte und Veröffentlichungen",
+  "publishingHelp": "Ihre Rezepte im aktuell gewählten Bereich. Verwalten Sie hier Einreichungen für das öffentliche Kochbuch.",
+  "viewSubmissions": "Einreichungsstatus und Rückmeldungen",
+  "noOwnRecipes": "Sie haben noch keine eigenen Rezepte in diesem Bereich.",
+  "recipePublished": "Im Bereich veröffentlicht",
+  "editRecipe": "Rezept bearbeiten",
+  "publicationApproved": "Freigegeben",
+  "publicationRejected": "Abgelehnt oder zurückgezogen",
+  "publishRecipe": "Zum öffentlichen Kochbuch hinzufügen",
+  "publishPrivateFirst": "Veröffentlichen Sie das Rezept zuerst in Ihrem Bereich, bevor Sie es für das öffentliche Kochbuch einreichen.",
+  "previousRecipes": "Vorherige Rezepte",
+  "nextRecipes": "Nächste Rezepte"
 }

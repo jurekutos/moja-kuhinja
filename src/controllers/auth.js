@@ -1,4 +1,5 @@
 import { tr } from '../i18n/index.js';
+import { localizedUrl } from '../i18n/urls.js';
 import argon2 from 'argon2';
 import { eq } from 'drizzle-orm';
 import { users } from '../db/schema.js';
@@ -16,7 +17,7 @@ export function authController(db) {
       const current=user && db.select({hash:users.passwordHash,version:users.sessionVersion}).from(users).where(eq(users.id,user.id)).get();
       if (!valid || !user || !current || current.hash!==user.passwordHash || password.length > 1024) return res.status(422).render('auth/login', { title: tr("auth:s7bcd197ef8f7"), errors: [tr("auth:scc14b37b31eb")], email });
       const destination = /^[a-f0-9]{64}$/.test(req.session.pendingInvite || '') ? `/join/${req.session.pendingInvite}` : '/';
-      req.session.regenerate(error => { if (error) return next(error); req.session.userId = user.id;req.session.authVersion=current.version; req.session.save(error => error ? next(error) : res.redirect(destination)); });
+      req.session.regenerate(error => { if (error) return next(error); req.session.userId = user.id;req.session.authVersion=current.version; req.session.save(error => error ? next(error) : res.redirect(localizedUrl(destination,user.language || 'sl'))); });
     },
     logout(req, res, next) { req.session.destroy(error => { if (error) return next(error); res.clearCookie('mk.sid', { path: '/' }); res.redirect('/login'); }); },
   };

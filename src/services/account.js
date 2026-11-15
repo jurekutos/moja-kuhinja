@@ -6,6 +6,14 @@ import { displayName, passwordChange, rejectFields } from '../validators/account
 import { audit } from './audit.js';
 export function accountService(db) {
   return {
+    publishingRecipes(user, query = {}) {
+      const where=sql`r.household_id=${user.householdId} and r.created_by=${user.id} and exists(select 1 from household_members m where m.household_id=r.household_id and m.user_id=${user.id})`;
+      const count=db.get(sql`select count(*) as count from recipes r where ${where}`).count;
+      const pages=Math.max(1,Math.ceil(count/12));
+      const page=Math.max(1,Math.min(pages,Number.parseInt(query.recipePage)||1));
+      const rows=db.all(sql`select r.id from recipes r where ${where} order by r.created_at desc,r.id desc limit 12 offset ${(page-1)*12}`);
+      return {count,pages,page,rows:rows.map(row=>({...row,publications:db.all(sql`select p.id,v.language,v.status,v.complete from recipe_publications p join publication_translations v on v.publication_id=p.id where p.recipe_id=${row.id} and p.household_id=${user.householdId} order by v.created_at desc,v.id desc limit 12`)}))};
+    },
     profile(userId) {
       return db.select({id:users.id,name:users.name,email:users.email,createdAt:users.createdAt}).from(users).where(eq(users.id,userId)).get();
     },

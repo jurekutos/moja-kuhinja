@@ -50,6 +50,9 @@ export function recipeCatalog(db, recipes) {
         publicFilters.push(sql`exists (select 1 from ${t.communityFavorites} where ${t.communityFavorites.publicationId} = ${t.publications.id} and ${t.communityFavorites.userId} = ${user.id})`);
       }
       const privateRows = sql`select 'workspace' as kind, ${t.recipes.id} as id, ${localizedTitle} as title, ${t.recipes.createdAt} as created from ${t.recipes} where ${sql.join(privateFilters, sql` and `)}`;
+      // Prefer the matching workspace original in the combined collection. Apply
+      // this before counting/pagination; public-only browsing remains independent.
+      if (view === 'all') publicFilters.push(sql`not exists (select 1 from (${privateRows}) workspace_original where workspace_original.id=${t.publications.recipeId})`);
       const publicRows = sql`select 'public' as kind, ${t.publications.id} as id, json_extract(${snapshot}, '$.title') as title, ${t.publications.createdAt} as created from ${t.publications} where ${sql.join(publicFilters, sql` and `)}`;
       const union = view === 'all' ? sql`${privateRows} union all ${publicRows}` : view === 'public' ? publicRows : privateRows;
       const count = db.get(sql`select count(*) as count from (${union})`).count;
@@ -58,7 +61,11 @@ export function recipeCatalog(db, recipes) {
       const order = query.sort === 'alpha' ? sql`normalize_sl(title) asc, kind asc, id desc` : sql`created desc, kind asc, id desc`;
       const rows = db.all(sql`select * from (${union}) order by ${order} limit 24 offset ${(page - 1) * 24}`);
       const items = rows.map(row => {
-        if (row.kind === 'workspace') return recipes.get(row.id, user.householdId, user.id,language);
+        if (row.kind === 'workspace') {
+          const recipe=recipes.get(row.id, user.householdId, user.id,language);
+          const publication=view==='all' ? db.get(sql`select p.id from recipe_publications p where p.recipe_id=${row.id} and exists(${publicVersion(sql`p.id`,language)}) order by p.created_at desc,p.id desc limit 1`) : null;
+          return {...recipe,publicPublicationId:publication?.id || null};
+        }
         const publication = db.get(sql`select ${snapshot} as snapshot from ${t.publications} where ${t.publications.id} = ${row.id} and exists(${publicVersion(t.publications.id,language)})`);
         const favorite = !!db.get(sql`select 1 from ${t.communityFavorites} where ${t.communityFavorites.publicationId} = ${row.id} and ${t.communityFavorites.userId} = ${user.id}`);
         return { ...JSON.parse(publication.snapshot), id: row.id, communityId: row.id, status: 'approved', favorite };

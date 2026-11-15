@@ -175,5 +175,9 @@
   "unitPiece": "kos",
   "unitTablespoon": "žlica",
   "unitTeaspoon": "žlička",
-  "noWorkspace": "Brez prostora"
+  "noWorkspace": "Brez prostora",
+  "languagePreferenceHelp": "Izbrani jezik velja za vmesnik in javno kuharico. Zasebni recepti ostanejo dostopni v vseh jezikih.",
+  "publicationDraftSaved": "Osnutek javne objave je shranjen.",
+  "alsoPublic": "Tudi javno",
+  "viewPublicVersion": "Poglej javno različico"
 }

@@ -5,7 +5,7 @@ import { eq, and, desc, asc, inArray, sql } from 'drizzle-orm';
 import * as t from '../db/schema.js';
 const normalized = value => value.normalize('NFKC').toLocaleLowerCase('sl').trim();
 export function recipeService(db) {
-  function get(id, householdId, userId, language) {
+  function get(id, householdId, userId, language, explicit = false) {
     const recipe = db.select().from(t.recipes).where(and(eq(t.recipes.id, id), eq(t.recipes.householdId, householdId))).get();
     if (!recipe) { const e = new Error(tr("recipes:sa4704a782416")); e.status = 404; throw e; }
     const result = { ...recipe,
@@ -19,7 +19,7 @@ export function recipeService(db) {
       favorite: !!db.select().from(t.favorites).where(and(eq(t.favorites.userId, userId), eq(t.favorites.recipeId, id))).get(),
     };
     const preferred = language === false ? recipe.originalLanguage : language || db.select({language:t.users.language}).from(t.users).where(eq(t.users.id,userId)).get()?.language || 'sl';
-    return translatedRecipe(db,result,preferred,typeof language === 'string');
+    return translatedRecipe(db,result,preferred,explicit);
   }
   function requireAuthor(id, user) {
     const recipe = get(id, user.householdId, user.id, false);
@@ -82,7 +82,7 @@ export function recipeService(db) {
     const count = db.select({ count: sql`count(*)` }).from(t.recipes).where(and(...conditions)).get().count;
     const page = Math.max(1, Math.min(Math.max(1, Math.ceil(count / 24)), Number.parseInt(query.page) || 1));
     const rows = db.select().from(t.recipes).where(and(...conditions)).orderBy(query.sort === 'alpha' ? sql`normalize_sl(${t.recipes.title})` : desc(t.recipes.createdAt), desc(t.recipes.id)).limit(24).offset((page - 1) * 24).all();
-    return { recipes: rows.map(r => get(r.id, user.householdId, user.id)), count, page, pages: Math.ceil(count / 24) };
+    return { recipes: rows.map(r => get(r.id, user.householdId, user.id, user.language || 'sl')), count, page, pages: Math.ceil(count / 24) };
   }
   return { get, save, list, requireAuthor,
     saveNotes(id, user, body) {

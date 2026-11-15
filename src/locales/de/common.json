@@ -175,5 +175,9 @@
   "unitPiece": "Stück",
   "unitTablespoon": "EL",
   "unitTeaspoon": "TL",
-  "noWorkspace": "Kein Bereich"
+  "noWorkspace": "Kein Bereich",
+  "languagePreferenceHelp": "Die gewählte Sprache gilt für die Oberfläche und das öffentliche Kochbuch. Private Rezepte bleiben in allen Sprachen zugänglich.",
+  "publicationDraftSaved": "Entwurf für die öffentliche Veröffentlichung gespeichert.",
+  "alsoPublic": "Auch öffentlich",
+  "viewPublicVersion": "Öffentliche Version ansehen"
 }

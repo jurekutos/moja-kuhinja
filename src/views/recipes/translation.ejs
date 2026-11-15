@@ -1,7 +1,7 @@
 <%- include('../layouts/header') %>
-<a class="back-link" href="/recipes/<%= recipe.id %>">← <%= recipe.title %></a>
+<a class="back-link" href="<%= localeUrl("/recipes/" + (recipe.id)) %>">← <%= recipe.title %></a>
 <h1><%= t('common:translations') %> · <%= localeNames[translationLanguage] %></h1><p class="muted"><%= t('common:translationHelp') %></p>
-<form class="stack" data-translation-form method="post" action="/recipes/<%= recipe.id %>/translations/<%= translationLanguage %>">
+<form class="stack" data-translation-form method="post" action="<%= localeUrl("/recipes/" + (recipe.id) + "/translations/" + (translationLanguage)) %>">
 <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="revision" value="<%= recipe.contentRevision %>"><input type="hidden" name="ingredientsJson" value="[]"><input type="hidden" name="stepsJson" value="[]">
 <section class="panel stack"><label><%= t("recipes:s9bbf5bb58882") %><input name="title" maxlength="160" required value="<%= version.title %>"></label><label><%= t("recipes:sd277e08fa5a5") %><textarea name="description" maxlength="3000"><%= version.description %></textarea></label><p><%= recipe.servings %> <%= t("recipes:sc7fe034eb5f6") %> <%= recipe.prepMinutes + recipe.cookMinutes %> <%= t("recipes:s1f6fa6f69d18") %></p>
 <h2><%= t("recipes:s49527351414c") %></h2><% recipe.ingredients.forEach(i=>{const text=ingredientTexts.find(v=>v.ingredientId===i.id); %><div data-translated-ingredient="<%= i.id %>" class="translation-grid"><p><%= i.quantity %> <%= unitLabel(i.unit) %> <%= i.name %> <%= i.note %></p><label><%= t("recipes:s86c6c9e6de93") %><input data-translation-name maxlength="150" value="<%= text?.name || '' %>"></label><label><%= t("recipes:s13edd8ae97e2") %><input data-translation-note maxlength="250" value="<%= text?.note || '' %>"></label></div><% }); %>

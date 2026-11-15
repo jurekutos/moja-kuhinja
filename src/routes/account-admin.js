@@ -4,6 +4,7 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { verifyCsrf,requireAdmin,requireSuperAdmin } from '../middleware/security.js';
 import { accountService } from '../services/account.js';
+import { recipeService } from '../services/recipes.js';
 import { workspaceDeletionService } from '../services/workspace-deletion.js';
 import { superAdminService } from '../services/super-admin.js';
 import { settingsController } from '../controllers/settings.js';
@@ -11,7 +12,7 @@ import { workspaceAdminController } from '../controllers/workspace-admin.js';
 import { superAdminController } from '../controllers/super-admin.js';
 export function accountAdminRoutes(db,workspaces,config) {
   const router=Router();const accounts=accountService(db);const deletion=workspaceDeletionService(db,config.uploadDir);
-  const settings=settingsController(accounts);const workspace=workspaceAdminController(workspaces,accounts,deletion);const admin=superAdminController(superAdminService(db),workspaces,deletion,accounts);
+  const settings=settingsController(accounts,recipeService(db),globalCatalogService(db));const workspace=workspaceAdminController(workspaces,accounts,deletion);const admin=superAdminController(superAdminService(db),workspaces,deletion,accounts);
   for(const param of ['workspaceId','userId'])router.param(param,(req,res,next,value)=>{if(!/^[1-9]\d*$/.test(value)||!Number.isSafeInteger(Number(value)))return res.status(404).render('error',{title:tr("auth:s5dbe36ac6d2d"),message:tr("auth:s8c65e70faed8")});next();});
   const passwordLimit=rateLimit({windowMs:15*60000,limit:10,standardHeaders:'draft-8',legacyHeaders:false,handler:(req,res)=>res.status(429).render('error',{title:tr("auth:s4b07fb3a8a72"),message:tr("auth:s778af7087f72")})});
   router.get('/settings',settings.page);

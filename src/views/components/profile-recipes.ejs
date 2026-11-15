@@ -1,0 +1,13 @@
+<section id="my-recipes" class="stack">
+  <header class="section-heading"><div><h2><%= t('settings:myRecipesAndPublications') %></h2><p class="muted"><%= t('settings:publishingHelp') %></p></div><a class="text-link" href="<%= localeUrl('/submissions') %>"><%= t('settings:viewSubmissions') %></a></header>
+  <% if (!publishing.rows.length) { %><div class="panel"><p class="muted"><%= t('settings:noOwnRecipes') %></p></div><% } %>
+  <% publishing.rows.forEach(item=>{const recipe=item.recipe;const editable=user.role!=='viewer';const ready=recipe.translations.some(v=>v.complete&&v.reviewed); %>
+    <article class="panel stack">
+      <div class="member-row"><div><h3><a href="<%= localeUrl('/recipes/'+recipe.id) %>"><%= recipe.title %></a></h3><p class="small muted"><%= recipe.status==='published'?t('settings:recipePublished'):t('common:draft') %> · <%= localeNames[recipe.language] %></p></div><% if(editable){ %><a class="text-link" href="<%= localeUrl('/recipes/'+recipe.id+'/edit') %>"><%= t('settings:editRecipe') %></a><% } %></div>
+      <% if(item.publications.length){ %><div class="actions"><% item.publications.forEach(publication=>{ %><a class="tag" href="<%= localeUrl('/community/'+publication.id+'?reviewLanguage='+publication.language) %>"><%= publication.language.toUpperCase() %> · <%= ({draft:t('common:draft'),pending:t('common:pending'),approved:t('settings:publicationApproved'),rejected:t('settings:publicationRejected')})[publication.status] %></a><% }); %></div><% } %>
+      <% if(editable && recipe.status==='published' && ready){ %><details class="profile-share-details"><summary class="text-link"><%= t('settings:publishRecipe') %></summary><div class="profile-share-content"><%- include('share-recipe',{recipe,compact:true,sharingReturnTo:'/settings?recipePage='+publishing.page}) %></div></details>
+      <% } else if(recipe.status!=='published'){ %><p class="small muted"><%= t('settings:publishPrivateFirst') %></p><% } else if(editable && !ready){ %><p class="small muted"><%= t('common:incomplete') %></p><% } %>
+    </article>
+  <% }); %>
+  <% if(publishing.pages>1){ %><nav class="pagination" aria-label="<%= t('settings:myRecipesAndPublications') %>"><% if(publishing.page>1){ %><a class="button secondary" href="<%= localeUrl('/settings?recipePage='+(publishing.page-1)+'#my-recipes') %>"><%= t('settings:previousRecipes') %></a><% } %><span><%= publishing.page %> / <%= publishing.pages %></span><% if(publishing.page<publishing.pages){ %><a class="button secondary" href="<%= localeUrl('/settings?recipePage='+(publishing.page+1)+'#my-recipes') %>"><%= t('settings:nextRecipes') %></a><% } %></nav><% } %>
+</section>

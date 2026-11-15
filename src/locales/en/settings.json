@@ -24,5 +24,17 @@
   "s1154fa98c18c": "My workspaces",
   "sb18a2d143658": "You are not currently a member of any workspace. Your account remains active. Open a valid invitation to join.",
   "s2ab52f23b9f3": "Explore the shared cookbook →",
-  "s082fed88ca26": "· Members:"
+  "s082fed88ca26": "· Members:",
+  "myRecipesAndPublications": "My recipes and publications",
+  "publishingHelp": "Your recipes in the currently selected workspace. Manage public cookbook submissions here.",
+  "viewSubmissions": "Submission status and feedback",
+  "noOwnRecipes": "You have no recipes of your own in this workspace yet.",
+  "recipePublished": "Published in workspace",
+  "editRecipe": "Edit recipe",
+  "publicationApproved": "Approved",
+  "publicationRejected": "Rejected or withdrawn",
+  "publishRecipe": "Add to public cookbook",
+  "publishPrivateFirst": "Publish this recipe in your workspace before submitting it to the public cookbook.",
+  "previousRecipes": "Previous recipes",
+  "nextRecipes": "Next recipes"
 }

@@ -1,5 +1,6 @@
 import { tr } from './i18n/index.js';
 import { localization } from './i18n/index.js';
+import { languagePath, localizedNavigation } from './i18n/urls.js';
 import express from 'express';
 import helmet from 'helmet';
 import session from 'express-session';
@@ -21,7 +22,7 @@ export function createApp({ db, sqlite, config }) {
   app.use(express.static(path.resolve('public'), { maxAge: config.production ? '1d' : 0 }));
   const store = new SqliteSessionStore(db); app.locals.sessionStore = store;
   app.use(session({ name: 'mk.sid', secret: config.secret, store, resave: false, saveUninitialized: false, cookie: { httpOnly: true, secure: config.production, sameSite: 'lax', maxAge: 7 * 86400000 } }));
-  app.use(csrfToken, identify(db), localization(db,config.production));
+  app.use(languagePath, csrfToken, identify(db), localization(db,config.production), localizedNavigation);
   app.use(express.urlencoded({ extended: false, limit: '512kb' }));
 
   app.use((req, res, next) => {

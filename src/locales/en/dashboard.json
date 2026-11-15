@@ -18,5 +18,7 @@
   "s1a0545cfa6ba": "All recipes →",
   "sb3ace51f72c9": "Every cookbook starts with its first recipe.",
   "se3bf60d078a0": "Add a dish you always enjoy making.",
-  "s106b1d3871a2": "Add first recipe"
+  "s106b1d3871a2": "Add first recipe",
+  "emptyLanguageTitle": "No recipes in this language yet.",
+  "emptyLanguageHelp": "Add a recipe or a reviewed translation in the selected language."
 }

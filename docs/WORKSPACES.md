@@ -53,8 +53,8 @@ A workspace must retain at least one admin. Promote someone else before removing
 
 ## Publish a recipe to all workspaces
 
-1. Open a published recipe in your workspace. Drafts cannot be submitted.
-2. Select **Pošlji v skupno kuharico** and confirm that you intend to share its content and photos. You must have permission to share them.
+1. Open **Moj profil → Moji recepti in objave**. This lists your own recipes in the active workspace, including publication statuses. Recipe drafts must first be published in the workspace.
+2. Expand **Dodaj v javno kuharico**, choose a reviewed content language and explicitly map global categories. Save a publication draft or select **Pošlji v skupno kuharico** and confirm that you intend to share its content and photos. You must have permission to share them. Publishing controls are no longer displayed on private recipe detail pages.
 3. The app creates an independent snapshot of the recipe, source metadata, attribution and photos. **Private notes, favorites and workspace comments are excluded.**
 4. Open **Naše oddaje** (`/submissions`) to follow its status and read the moderator's feedback.
 5. The moderator opens **Pregled oddaj** (`/admin/reviews`), reads the submitted copy, and selects **Odobri objavo** or **Zavrni oddajo**. Rejections require feedback.
@@ -68,7 +68,7 @@ Moderators can open an approved recipe and use **Umakni iz skupne kuharice**, wi
 ## Use the shared cookbook and hearts
 
 - On **Recepti**, use **Moj prostor** for workspace recipes, **Vsi recepti** for workspace recipes plus all approved public snapshots, and **Samo javni** for approved public snapshots only. Public here means shared with signed-in users, not anonymous visitors. Other workspaces' private recipes and pending/rejected submissions are never included.
-- Recipe-name search, ingredient search, category filtering, personal favorites, alphabetical/newest sorting and pagination apply across the selected view. Tabs preserve filters and reset the page number; hearts preserve both the view and current list URL. In the combined view, workspace originals and their approved snapshots remain separate recipes.
+- Recipe-name search, ingredient search, category filtering, personal favorites, alphabetical/newest sorting and pagination apply across the selected view. Tabs preserve filters and reset the page number; hearts preserve both the view and current list URL. In **Vsi recepti**, a matching workspace original takes precedence over its approved public snapshots, using the stored source-recipe ID. The card shows **Moj prostor · Tudi javno** and links to the newest public version available in the selected language. Deduplication happens before counts and pagination. If only a public version matches the filters (for example a separately favorited public snapshot), it remains discoverable. **Samo javni** still shows public versions independently; private/public records, favorites and moderation remain separate.
 - Tap a recipe card's heart to add/remove a personal favorite. It is a separate button from the card link and returns to the same list/search filters. Filled hearts are favorites. Both private and approved global cards support it.
 - **Moji priljubljeni** follows the selected view: workspace favorites, public favorites, or both. Workspace favorites and global favorites remain separate records; favoriting a public recipe does not copy it.
 - **Kopiraj v moj prostor** creates an editable workspace recipe with its own ingredient catalog references and image files. Editing/deleting the copy does not change the global recipe. Repeating the action intentionally makes another copy.

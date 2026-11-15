@@ -24,5 +24,17 @@
   "s1154fa98c18c": "Moji prostori",
   "sb18a2d143658": "Trenutno niste član nobenega prostora. Vaš račun ostaja aktiven. Za pridružitev odprite veljavno povabilo.",
   "s2ab52f23b9f3": "Razišči skupno kuharico →",
-  "s082fed88ca26": "· Člani:"
+  "s082fed88ca26": "· Člani:",
+  "myRecipesAndPublications": "Moji recepti in objave",
+  "publishingHelp": "Vaši recepti v trenutno izbranem prostoru. Tu upravljate oddaje v javno kuharico.",
+  "viewSubmissions": "Stanje oddaj in povratne informacije",
+  "noOwnRecipes": "V tem prostoru še nimate svojih receptov.",
+  "recipePublished": "Objavljeno v prostoru",
+  "editRecipe": "Uredi recept",
+  "publicationApproved": "Odobreno",
+  "publicationRejected": "Zavrnjeno ali umaknjeno",
+  "publishRecipe": "Dodaj v javno kuharico",
+  "publishPrivateFirst": "Pred oddajo v javno kuharico objavite recept v svojem prostoru.",
+  "previousRecipes": "Prejšnji recepti",
+  "nextRecipes": "Naslednji recepti"
 }

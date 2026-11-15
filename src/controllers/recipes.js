@@ -3,7 +3,7 @@ import { emptyRecipe, parseRecipe } from '../validators/recipe.js';
 import { parseComment } from '../validators/comment.js';
 import { safeReturn } from './community.js';
 export function recipeController(service, imageService, comments, catalog, reads, globalCatalog) {
-  const read = req => service.get(Number(req.params.id), req.user.householdId, req.user.id, ['sl','en','de'].includes(req.query.lang) ? req.query.lang : undefined);
+  const read = req => { const explicit = ['sl','en','de'].includes(req.query.lang); return service.get(Number(req.params.id), req.user.householdId, req.user.id, explicit ? req.query.lang : req.language, explicit); };
   const flash = (req, message) => { req.session.flash = message; };
   return {
     dashboard(req, res) { if(!req.user.householdId)return res.render('workspaces/empty',{title:tr("recipes:sebee8091cd30")});const result = service.list(req.user); const favorites = service.list(req.user, { favorite: '1' }); res.render('dashboard', { title: tr("recipes:s2402237814d8"), recipes: result.recipes.slice(0, 4), count: result.count, favoriteCount: favorites.count }); },

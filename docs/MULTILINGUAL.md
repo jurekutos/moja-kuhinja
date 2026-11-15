@@ -2,6 +2,16 @@
 
 Moja kuhinja remains an Express/EJS application. The interface supports Slovenian (`sl`), English (`en`) and German (`de`). Existing accounts and content default to Slovenian. Interface language never translates user content automatically.
 
+## Language settings and URLs
+
+Signed-in users select and save their language under **My profile → Language**. The selector is no longer shown globally for signed-in accounts; anonymous landing/login pages retain it. Saving the preference updates both the account and the URL prefix: `/sl/`, `/en/`, or `/de/` (for example `/en/recipes?view=public`). `/si/` is accepted as an alias and redirects to `/sl/`.
+
+An explicit URL prefix selects that request's interface/public-content language without rewriting the saved account preference on a GET request. URLs without a prefix redirect to the saved account language, anonymous language cookie, or Slovenian default. Navigation links, form actions, redirects, protected image URLs and ingredient autocomplete retain the prefix. CSS/JavaScript/icons stay at their original static paths. Existing invitation links remain valid; newly copied invitation links include the current language.
+
+Home and **My workspace** show authorized private recipes in every language, preferring a complete reviewed translation and otherwise showing the source. **All recipes** combines those private recipes with public versions approved in the current URL language. **Public only / Shared cookbook** never falls back to Slovenian or another language. Changing the interface language does not delete or hide personal workspace content.
+
+This settings/URL update reuses existing language preferences and needs no database migration. Tests, builds and automated checks were deliberately not run for this update at the user's request; the verification results below describe the earlier multilingual implementation.
+
 ## Upgrade an existing installation
 
 The implementation inspected the development database schema read-only. It had migrations 0000–0006 applied. **Migrations 0007 and 0008 were not applied to that database.** All upgrade tests and browser checks use temporary databases and synthetic content.
@@ -17,7 +27,7 @@ The implementation inspected the development database schema read-only. It had m
    npm run dev
    ```
 
-3. Open `http://127.0.0.1:3000`. Use the language picker, available on every page including account settings. Existing signed-in sessions remain valid.
+3. Open `http://127.0.0.1:3000`. Signed-in users select their language in account settings; visitors use the language picker on public pages. Existing signed-in sessions remain valid.
 4. Before sharing an existing recipe in another language, add its translation, review it, and submit that language for moderation.
 
 Migration `0007_loving_blindfold.sql` only adds columns, tables, indexes, compatibility triggers and initial catalog rows. It copies existing text into Slovenian source translations and independent Slovenian publication versions. It does not drop/recreate existing tables, infer languages, translate personal content, merge local categories or change existing quantities. Incomplete approved legacy snapshots retain their records and historical status but are not eligible for public visibility until replaced with a complete reviewed submission. The new dictionaries are initial reference entries, not automatic mappings to household data.
@@ -32,7 +42,7 @@ Before migrating, keep the complete database/uploads backup, its manifest and a 
 
 Use `t('feature:key')` in EJS and `tr('feature:key')` in server code. Express runs each request inside an `AsyncLocalStorage` language context, so asynchronous requests do not change another user's locale. Zod schemas with localized messages are created during validation rather than at module initialization. Recipe/user values must still use escaped EJS output; translation helpers do not mark HTML safe.
 
-Authenticated language preference comes from `users.language`, loaded from SQLite on each request. `POST /language` validates the language and CSRF token, persists account preferences and sets an HTTP-only SameSite cookie. Anonymous pages use that cookie, otherwise Slovenian. Invitation-created accounts inherit the selected interface language. Existing accounts retain their saved preference when signing in.
+Authenticated language preference comes from `users.language`, loaded from SQLite on each request. The URL prefix selects the current request language; it also controls public content filtering. The language-prefixed `POST /language` validates the language and CSRF token, persists account preferences and sets an HTTP-only SameSite cookie. Unprefixed anonymous pages use that cookie, otherwise Slovenian. Invitation-created accounts inherit the selected interface language. Existing accounts retain their saved preference when signing in.
 
 Only the browser interaction messages are placed in an HTML-escaped metadata attribute. `public/js/i18n.js` reads those messages for dynamic ingredient/step forms, clipboard feedback and serving validation. Dates use the selected locale and Slovenian time; weekly date-only calculations retain UTC date arithmetic. Quantity scaling keeps its existing integer arithmetic and only changes the decimal display separator. Known unit identifiers (`piece`, `tablespoon`, `teaspoon`) have localized labels; existing Slovenian labels are recognized without rewriting stored data during migration. Arbitrary units remain unchanged and are never converted.
 

@@ -18,5 +18,7 @@
   "s1a0545cfa6ba": "Vsi recepti →",
   "sb3ace51f72c9": "Vsaka kuharica se začne s prvim receptom.",
   "se3bf60d078a0": "Dodajta jed, ki jo vedno rada pripravita.",
-  "s106b1d3871a2": "Dodaj prvi recept"
+  "s106b1d3871a2": "Dodaj prvi recept",
+  "emptyLanguageTitle": "V tem jeziku še ni receptov.",
+  "emptyLanguageHelp": "Dodajte recept ali pregledan prevod za izbrani jezik."
 }

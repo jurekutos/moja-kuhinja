@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { eq } from 'drizzle-orm';
 import { users } from '../db/schema.js';
+import { localizedUrl, stripLanguage } from './urls.js';
 
 export const languages = ['sl','en','de'];
 export const localeNames = {sl:'Slovenščina',en:'English',de:'Deutsch'};
@@ -24,7 +25,7 @@ export const unitLabel = (unit,language=currentLanguage()) => {const id=({'kos':
 export function localization(db, production) {
   return (req,res,next) => {
     const cookie = req.headers.cookie?.split(';').map(v=>v.trim()).find(v=>v.startsWith('mk.lang='))?.slice(8);
-    const language = languages.includes(req.user?.language) ? req.user.language : languages.includes(cookie) ? cookie : 'sl';
+    const language = req.urlLanguage || (languages.includes(req.user?.language) ? req.user.language : languages.includes(cookie) ? cookie : 'sl');
     req.language=language;
     if(req.user)req.user.language=language;
     const browserKeys=['moveUp','moveDown','remove','diced','step','canonicalIngredient','select','s53bc9dd2fcff','sd0883901c3cb','s119dd8d6a84e','s6e4ea9642719','s13edd8ae97e2','s4f4ee2fd1e5f'];
@@ -40,6 +41,10 @@ export function changeLanguage(db,production) {
     if(req.user)db.update(users).set({language}).where(eq(users.id,req.user.id)).run();
     res.cookie('mk.lang',language,{httpOnly:true,sameSite:'lax',secure:production,maxAge:365*86400000,path:'/'});
     const destination=typeof req.body.returnTo==='string' && /^\/(?!\/)[^\\\r\n]*$/.test(req.body.returnTo) ? req.body.returnTo : req.user?'/settings':'/login';
-    res.redirect(destination);
+    const target=new URL(destination,'http://local');
+    // Switching interface language leaves an explicit submission preview, while
+    // retaining collection/search filters such as view=public.
+    target.searchParams.delete('reviewLanguage');
+    res.redirect(localizedUrl(stripLanguage(target.pathname)+target.search+target.hash,language,true));
   };
 }

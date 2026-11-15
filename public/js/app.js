@@ -1,8 +1,8 @@
-import { tr,language } from './i18n.js';
+import { tr,language,localizedUrl } from './i18n.js';
 import { scaleQuantity } from './quantities.js';
 const invitationUrl = document.getElementById('invitation-url');
 if (invitationUrl) {
-  invitationUrl.value = new URL(invitationUrl.value, location.origin).href;
+  invitationUrl.value = new URL(localizedUrl(invitationUrl.value), location.origin).href;
   document.getElementById('copy-invitation')?.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(invitationUrl.value); document.getElementById('copy-status').textContent = tr("common:s53bc9dd2fcff"); }
     catch { invitationUrl.focus(); invitationUrl.select(); document.getElementById('copy-status').textContent = tr("common:sd0883901c3cb"); }
@@ -50,7 +50,7 @@ if (form) {
     row.dataset.canonicalId=value.canonicalIngredientId || '';
     const catalogLabel=document.createElement('label');catalogLabel.textContent=tr('common:canonicalIngredient');
     const catalogSelect=document.createElement('select');catalogLabel.append(catalogSelect);row.append(catalogLabel);
-    async function suggest(){const needle=nameInput.value;try{const response=await fetch('/ingredients/autocomplete?q='+encodeURIComponent(needle));if(!response.ok)return;const choices=await response.json();if(nameInput.value!==needle)return;catalogSelect.replaceChildren(new Option(tr('common:select'),''));if(row.dataset.canonicalId&&!choices.some(v=>String(v.id)===row.dataset.canonicalId))catalogSelect.add(new Option('#'+row.dataset.canonicalId,row.dataset.canonicalId));for(const choice of choices)catalogSelect.add(new Option(choice.name,String(choice.id)));catalogSelect.value=row.dataset.canonicalId;}catch{/* Custom ingredients remain usable offline. */}}
+    async function suggest(){const needle=nameInput.value;try{const response=await fetch(localizedUrl('/ingredients/autocomplete?q='+encodeURIComponent(needle)));if(!response.ok)return;const choices=await response.json();if(nameInput.value!==needle)return;catalogSelect.replaceChildren(new Option(tr('common:select'),''));if(row.dataset.canonicalId&&!choices.some(v=>String(v.id)===row.dataset.canonicalId))catalogSelect.add(new Option('#'+row.dataset.canonicalId,row.dataset.canonicalId));for(const choice of choices)catalogSelect.add(new Option(choice.name,String(choice.id)));catalogSelect.value=row.dataset.canonicalId;}catch{/* Custom ingredients remain usable offline. */}}
     nameInput.addEventListener('input',()=>{row.dataset.canonicalId='';suggest();sync();});
     catalogSelect.addEventListener('change',()=>{row.dataset.canonicalId=catalogSelect.value;if(catalogSelect.value)nameInput.value=catalogSelect.selectedOptions[0].textContent;sync();});suggest();
     row.append(tools(row, ingredientRows, tr("common:s119dd8d6a84e"))); ingredientRows.append(row); sync();

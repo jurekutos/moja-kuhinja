@@ -4,11 +4,11 @@
     <ol class="comment-list"><% comments.forEach(comment => { %>
       <li class="comment-item"><div class="comment-meta"><strong><%= comment.author %></strong><time class="muted small" datetime="<%= comment.createdAt %>"><%= new Date(comment.createdAt).toLocaleString(locale, { timeZone: 'Europe/Ljubljana', dateStyle: 'medium', timeStyle: 'short' }) %></time></div>
         <p class="preserve"><%= comment.body %></p>
-        <% if (comment.userId === user.id) { %><form action="/recipes/<%= recipe.id %>/comments/<%= comment.id %>/delete" method="post" data-confirm="<%= t("common:sc7bbac200a9b") %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="text-link danger" aria-label="<%= t("common:s0689fa5d3caf") %>"><%= t("common:s3cba11936251") %></button></form><% } %>
+        <% if (comment.userId === user.id) { %><form action="<%= localeUrl("/recipes/" + (recipe.id) + "/comments/" + (comment.id) + "/delete") %>" method="post" data-confirm="<%= t("common:sc7bbac200a9b") %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="text-link danger" aria-label="<%= t("common:s0689fa5d3caf") %>"><%= t("common:s3cba11936251") %></button></form><% } %>
       </li>
     <% }); %></ol>
   <% } else { %><p class="muted"><%= t("common:s5ff1d585eee2") %></p><% } %>
-  <form action="/recipes/<%= recipe.id %>/comments" method="post" class="stack">
+  <form action="<%= localeUrl("/recipes/" + (recipe.id) + "/comments") %>" method="post" class="stack">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <label for="comment-body"><%= t("common:s61cbd86b9a32") %></label>
     <% if (commentError) { %><p id="comment-error" class="danger" role="alert"><%= commentError %></p><% } %>
