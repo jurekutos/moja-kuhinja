@@ -12,9 +12,10 @@ export function authController(db) {
       const password = typeof req.body.password === 'string' ? req.body.password : '';
       const user = db.select().from(users).where(eq(users.email, email)).get();
       const valid = await argon2.verify(user?.passwordHash || await dummyHash, password.length <= 1024 ? password : '').catch(() => false);
-      if (!valid || !user || password.length > 1024) return res.status(422).render('auth/login', { title: 'Prijava', errors: ['E-poštni naslov ali geslo ni pravilno.'], email });
+      const current=user && db.select({hash:users.passwordHash,version:users.sessionVersion}).from(users).where(eq(users.id,user.id)).get();
+      if (!valid || !user || !current || current.hash!==user.passwordHash || password.length > 1024) return res.status(422).render('auth/login', { title: 'Prijava', errors: ['E-poštni naslov ali geslo ni pravilno.'], email });
       const destination = /^[a-f0-9]{64}$/.test(req.session.pendingInvite || '') ? `/join/${req.session.pendingInvite}` : '/';
-      req.session.regenerate(error => { if (error) return next(error); req.session.userId = user.id; req.session.save(error => error ? next(error) : res.redirect(destination)); });
+      req.session.regenerate(error => { if (error) return next(error); req.session.userId = user.id;req.session.authVersion=current.version; req.session.save(error => error ? next(error) : res.redirect(destination)); });
     },
     logout(req, res, next) { req.session.destroy(error => { if (error) return next(error); res.clearCookie('mk.sid', { path: '/' }); res.redirect('/login'); }); },
   };

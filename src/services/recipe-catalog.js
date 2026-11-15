@@ -18,6 +18,16 @@ export function recipeCatalog(db, recipes) {
       const privateFilters = [sql`${t.recipes.householdId} = ${user.householdId}`];
       if (publishedOnly) privateFilters.push(sql`${t.recipes.status} = 'published'`);
       const publicFilters = [sql`${t.publications.status} = 'approved'`];
+      const author = typeof query.author === 'string' && /^[1-9]\d*$/.test(query.author) && Number.isSafeInteger(Number(query.author)) ? Number(query.author) : null;
+      let authorName = '';
+      if (author) {
+        privateFilters.push(sql`${t.recipes.createdBy} = ${author}`);
+        publicFilters.push(sql`${t.publications.submittedBy} = ${author}`);
+        const match = db.get(sql`select name from ${t.users} where id=${author} and (
+          exists(select 1 from ${t.recipes} where created_by=${author} and household_id=${user.householdId})
+          or exists(select 1 from ${t.publications} where submitted_by=${author} and status='approved'))`);
+        authorName = match?.name || 'Izbrani avtor';
+      }
       if (term) {
         privateFilters.push(sql`instr(normalize_sl(${t.recipes.title}), ${term}) > 0`);
         publicFilters.push(sql`instr(normalize_sl(json_extract(${t.publications.snapshot}, '$.title')), ${term}) > 0`);
@@ -52,7 +62,7 @@ export function recipeCatalog(db, recipes) {
       const publicCategories = sql`select c.value as name from ${t.publications}, json_each(${t.publications.snapshot}, '$.categories') c where ${t.publications.status} = 'approved'`;
       const categoryUnion = view === 'all' ? sql`${privateCategories} union all ${publicCategories}` : view === 'public' ? publicCategories : privateCategories;
       const categories = db.all(sql`select min(name) as name, normalize_sl(name) as key from (${categoryUnion}) group by normalize_sl(name) order by normalize_sl(name)`).map(c => ({ id: `name:${c.key}`, name: c.name }));
-      return { recipes: items, count, pages, page, categories, view, query: { ...query, category: categoryName ? `name:${categoryName}` : '', view } };
+      return { recipes: items, count, pages, page, categories, view, authorName, query: { ...query, author: author ? String(author) : '', category: categoryName ? `name:${categoryName}` : '', view } };
     },
   };
 }

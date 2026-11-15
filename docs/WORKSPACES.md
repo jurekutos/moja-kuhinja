@@ -1,5 +1,7 @@
 # Workspaces, invitations and the shared cookbook
 
+For the added profile settings, membership leaving, workspace rename/delete and separate Super Admin operations dashboard, see [Administration](ADMINISTRATION.md). A workspace admin/moderator is not a Super Admin. Follow [Backup and restore](BACKUP.md) before migrations/deletions on real data.
+
 The application remains local and has not been deployed. Start it with `npm run dev` as described in the README. `/` is the public landing page for visitors; signed-in users still see their dashboard. `/welcome` always shows the landing page.
 
 ## Existing accounts

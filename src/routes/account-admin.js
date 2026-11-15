@@ -1,0 +1,34 @@
+import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
+import { verifyCsrf,requireAdmin,requireSuperAdmin } from '../middleware/security.js';
+import { accountService } from '../services/account.js';
+import { workspaceDeletionService } from '../services/workspace-deletion.js';
+import { superAdminService } from '../services/super-admin.js';
+import { settingsController } from '../controllers/settings.js';
+import { workspaceAdminController } from '../controllers/workspace-admin.js';
+import { superAdminController } from '../controllers/super-admin.js';
+export function accountAdminRoutes(db,workspaces,config) {
+  const router=Router();const accounts=accountService(db);const deletion=workspaceDeletionService(db,config.uploadDir);
+  const settings=settingsController(accounts);const workspace=workspaceAdminController(workspaces,accounts,deletion);const admin=superAdminController(superAdminService(db),workspaces,deletion,accounts);
+  for(const param of ['workspaceId','userId'])router.param(param,(req,res,next,value)=>{if(!/^[1-9]\d*$/.test(value)||!Number.isSafeInteger(Number(value)))return res.status(404).render('error',{title:'Ni najdeno',message:'Zapis ne obstaja.'});next();});
+  const passwordLimit=rateLimit({windowMs:15*60000,limit:10,standardHeaders:'draft-8',legacyHeaders:false,handler:(req,res)=>res.status(429).render('error',{title:'Preveč poskusov',message:'Preveč poskusov spremembe gesla. Poskusite znova čez 15 minut.'})});
+  router.get('/settings',settings.page);
+  router.post('/settings/profile',verifyCsrf,settings.name);
+  router.post('/settings/password',verifyCsrf,passwordLimit,settings.password);
+  router.get('/workspaces/:workspaceId/leave',workspace.leavePage);
+  router.post('/workspaces/:workspaceId/leave',verifyCsrf,workspace.leave);
+  router.post('/workspace/rename',verifyCsrf,requireAdmin,workspace.rename);
+  router.get('/workspace/delete',requireAdmin,workspace.deletePage);
+  router.post('/workspace/delete',verifyCsrf,requireAdmin,workspace.remove);
+  router.use('/super-admin',requireSuperAdmin);
+  router.get('/super-admin',admin.dashboard);
+  router.get('/super-admin/users',admin.users);
+  router.get('/super-admin/workspaces',admin.workspaces);
+  router.get('/super-admin/workspaces/:workspaceId',admin.detail);
+  router.get('/super-admin/workspaces/:workspaceId/members/:userId/remove',admin.confirmMember);
+  router.post('/super-admin/workspaces/:workspaceId/members/:userId/remove',verifyCsrf,admin.removeMember);
+  router.get('/super-admin/workspaces/:workspaceId/delete',admin.deletePage);
+  router.post('/super-admin/workspaces/:workspaceId/delete',verifyCsrf,admin.remove);
+  router.get('/super-admin/statistics',admin.statistics);
+  return router;
+}

@@ -1,3 +1,4 @@
+import { recipeReadService } from '../services/recipe-reads.js';
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import multer from 'multer';
@@ -13,10 +14,14 @@ import { recipeCatalog } from '../services/recipe-catalog.js';
 import { plannerService } from '../services/planner.js';
 import { plannerController } from '../controllers/planner.js';
 import { MAX_IMAGE_SIZE } from '../services/images.js';
+import { accountAdminRoutes } from './account-admin.js';
 export function routes(db, recipes, images, config, comments) {
-  const router = Router(); const auth = authController(db); const controller = recipeController(recipes, images, comments, recipeCatalog(db, recipes));
-  const workspace = workspaceController(workspaceService(db));
-  const community = communityController(communityService(db, recipes, images, config.uploadDir), config);
+  const reads = recipeReadService(db);
+  const router = Router(); const auth = authController(db); const controller = recipeController(recipes, images, comments, recipeCatalog(db, recipes), reads);
+  const authorOnly = (req, res, next) => { recipes.requireAuthor(Number(req.params.id), req.user); next(); };
+  const imageAuthorOnly = (req, res, next) => { const image = images.get(Number(req.params.id), req.user.householdId); recipes.requireAuthor(image.recipeId, req.user); next(); };
+  const workspaces=workspaceService(db);const workspace = workspaceController(workspaces);
+  const community = communityController(communityService(db, recipes, images, config.uploadDir), config, reads);
   const planner = plannerController(plannerService(db),recipeCatalog(db,recipes));
   for (const param of ['userId', 'invitationId']) router.param(param, (req, res, next, value) => {
     if (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value))) return res.status(404).render('error', { title: 'Ni najdeno', message: 'Zahtevani zapis ne obstaja.' }); next();
@@ -29,6 +34,7 @@ export function routes(db, recipes, images, config, comments) {
   router.post('/join/:token', limit, verifyCsrf, workspace.accept);
   router.get('/', (req, res, next) => req.user ? next() : res.render('landing', { title: 'Recepti, ki povezujejo' }));
   router.use(requireAuth);
+  router.use(accountAdminRoutes(db,workspaces,config));
   router.post('/logout', verifyCsrf, auth.logout);
   router.get('/', controller.dashboard);
   router.get('/workspace', workspace.page);
@@ -54,14 +60,15 @@ export function routes(db, recipes, images, config, comments) {
   router.post('/planner/preferences', verifyCsrf, requireEditor, planner.preferences);
   router.get('/shopping', (req,res) => res.render('coming-soon',{title:'Nakupi'}));
   router.get('/recipes', controller.list);
+  router.get('/recipes/statistics', (req,res) => res.render('recipes/statistics', { title:'Branost receptov', ...reads.statistics(req.user, req.query) }));
   router.get('/recipes/new', requireEditor, controller.new);
   router.post('/recipes', verifyCsrf, requireEditor, controller.save);
   router.param('id', (req, res, next, value) => { if (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value))) return res.status(404).render('error', { title: 'Ni najdeno', message: 'Stran ne obstaja.' }); next(); });
   router.get('/recipes/:id', controller.detail);
-  router.get('/recipes/:id/edit', requireEditor, controller.edit);
+  router.get('/recipes/:id/edit', requireEditor, authorOnly, controller.edit);
   router.get('/recipes/:id/cook', controller.cook);
-  router.post('/recipes/:id', verifyCsrf, requireEditor, controller.save);
-  router.post('/recipes/:id/delete', verifyCsrf, requireEditor, controller.remove);
+  router.post('/recipes/:id', verifyCsrf, requireEditor, authorOnly, controller.save);
+  router.post('/recipes/:id/delete', verifyCsrf, requireEditor, authorOnly, controller.remove);
   router.post('/recipes/:id/submit', verifyCsrf, requireEditor, community.submit);
   router.post('/recipes/:id/notes', verifyCsrf, controller.notes);
   router.post('/recipes/:id/favorite', verifyCsrf, controller.favorite);
@@ -70,9 +77,9 @@ export function routes(db, recipes, images, config, comments) {
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_IMAGE_SIZE, files: 5, fields: 1, parts: 6 } }).array('images', 5);
   const uploadLimit = rateLimit({ windowMs: 60000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false, handler: (req, res) => res.status(429).render('error', { title: 'Preveč nalaganj', message: 'Počakajte minuto in poskusite znova.' }) });
   // Check ownership before buffering; multipart limits bound memory, and CSRF precedes all writes.
-  router.post('/recipes/:id/images', requireEditor, (req, res, next) => { recipes.get(Number(req.params.id), req.user.householdId, req.user.id); next(); }, uploadLimit, upload, verifyCsrf, controller.upload);
+  router.post('/recipes/:id/images', requireEditor, (req, res, next) => { recipes.requireAuthor(Number(req.params.id), req.user); next(); }, uploadLimit, upload, verifyCsrf, controller.upload);
   router.get('/images/:id', (req, res) => { const image = images.get(Number(req.params.id), req.user.householdId); res.set({ 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' }); res.type('webp').sendFile(path.join(config.uploadDir, req.query.size === 'small' ? image.thumbnail : image.filename)); });
-  router.post('/images/:id/delete', verifyCsrf, requireEditor, async (req, res) => { const id = await images.remove(Number(req.params.id), req.user.householdId); req.session.flash = 'Slika je odstranjena.'; res.redirect(`/recipes/${id}/edit#photos`); });
-  router.post('/images/:id/cover', verifyCsrf, requireEditor, (req, res) => { const id = images.cover(Number(req.params.id), req.user.householdId); req.session.flash = 'Naslovna slika je posodobljena.'; res.redirect(`/recipes/${id}/edit#photos`); });
+  router.post('/images/:id/delete', verifyCsrf, requireEditor, imageAuthorOnly, async (req, res) => { const id = await images.remove(Number(req.params.id), req.user.householdId); req.session.flash = 'Slika je odstranjena.'; res.redirect(`/recipes/${id}/edit#photos`); });
+  router.post('/images/:id/cover', verifyCsrf, requireEditor, imageAuthorOnly, (req, res) => { const id = images.cover(Number(req.params.id), req.user.householdId); req.session.flash = 'Naslovna slika je posodobljena.'; res.redirect(`/recipes/${id}/edit#photos`); });
   return router;
 }

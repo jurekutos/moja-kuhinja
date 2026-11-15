@@ -26,6 +26,6 @@ try {
     accounts.push({ name: userName, email, passwordHash: await argon2.hash(password, { type: argon2.argon2id, memoryCost: 65536, timeCost: 3, parallelism: 1 }) });
   }
   if (accounts[0].email === accounts[1].email) throw new Error('Accounts need different email addresses.');
-  db.transaction(tx => { const household = tx.insert(households).values({ name }).returning().get(); for (const [index, account] of accounts.entries()) { const user = tx.insert(users).values({ ...account, isModerator: index === 0 }).returning().get(); tx.insert(members).values({ userId: user.id, householdId: household.id, role: index === 0 ? 'admin' : 'editor' }).run(); } });
+  db.transaction(tx => { const household = tx.insert(households).values({ name,createdAt:new Date().toISOString() }).returning().get(); for (const [index, account] of accounts.entries()) { const user = tx.insert(users).values({ ...account,createdAt:new Date().toISOString(), isModerator: index === 0 }).returning().get(); tx.insert(members).values({ userId: user.id, householdId: household.id, role: index === 0 ? 'admin' : 'editor' }).run(); } });
   console.log('Household and two accounts created.');
 } catch(e) { hidden = false; console.error(e.message); process.exitCode = 1; } finally { rl.close(); sqlite.close(); }

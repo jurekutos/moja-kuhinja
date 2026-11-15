@@ -6,6 +6,8 @@ For the new landing page, invitations, roles and moderated shared cookbook, see 
 
 For weekly lunch/dinner planning, planned servings and conflict handling, see [Planner guide](docs/PLANNER.md).
 
+For profiles, password changes, leaving/deleting workspaces and explicit Super Admin bootstrap, see [Administration guide](docs/ADMINISTRATION.md). Before real migrations/deletions, follow [Backup and restore](docs/BACKUP.md).
+
 ## How the application works
 
 ```text
@@ -28,6 +30,10 @@ For example, submitting the new-recipe form sends `POST /recipes`. The route che
 | [src/routes/index.js](src/routes/index.js) | Maps URLs and HTTP methods to handlers. Also applies authentication, CSRF and upload/rate limits. |
 | [src/controllers/recipes.js](src/controllers/recipes.js) | Handles recipe pages, form errors, previews, saves, favorites and redirects. |
 | [src/controllers/auth.js](src/controllers/auth.js) | Login, password verification, session rotation and logout. |
+| [src/routes/account-admin.js](src/routes/account-admin.js) | Authenticated settings, workspace lifecycle and Super Admin routes/guards. |
+| [src/services/account.js](src/services/account.js) | Name validation, immutable email, password hashing, session version revocation and membership overview. |
+| [src/services/workspace-deletion.js](src/services/workspace-deletion.js) | Transactional deletion, preserved approved snapshots, exact-name checks and queued file cleanup. |
+| [src/services/super-admin.js](src/services/super-admin.js) | Read-only metadata inventories and real aggregate statistics; no private recipe content. |
 | [src/controllers/workspaces.js](src/controllers/workspaces.js) | Workspace/member forms, invitations, signup and switching spaces. |
 | [src/services/workspaces.js](src/services/workspaces.js) | Membership rules, invitation token checks, signup and last-admin protection. |
 | [src/controllers/community.js](src/controllers/community.js) | Shared collection pages, review actions and authorized snapshot images. |
@@ -125,3 +131,6 @@ Use [tests/app.test.js](tests/app.test.js) for server/recipe behavior, [tests/se
 Edit `src/styles.css`, not generated `public/css/app.css`. Manage dependencies through `npm install` and `package.json`, rather than hand-editing `package-lock.json` or `node_modules/`.
 
 Keep source code, migrations, the compiled stylesheet and `package-lock.json` in version control. `.env`, `data/`, `node_modules/` and `.runtime/` are local and ignored. `data/` contains real database/upload content: stop the app and back it up before database maintenance; do not delete it to fix a code problem.
+## Recipe reading statistics
+
+See [docs/READING_STATS.md](docs/READING_STATS.md) for daily counting rules, statistics filters, the service/table locations and the migration commands needed to enable the feature.

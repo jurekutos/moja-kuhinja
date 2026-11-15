@@ -24,6 +24,8 @@
     "db:migrate": "node --env-file=.env scripts/migrate.js",
     "setup": "node --env-file=.env scripts/setup.js",
     "storage:clean": "node --env-file=.env scripts/clean-storage.js",
+    "backup": "node --env-file=.env scripts/backup.js",
+    "super-admin:grant": "node --env-file=.env scripts/grant-super-admin.js",
     "test": "node --test --test-concurrency=1 tests/*.test.js",
     "test:browser": "node scripts/browser-smoke.js"
   },

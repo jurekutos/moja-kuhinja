@@ -1,11 +1,11 @@
 import { emptyRecipe, parseRecipe } from '../validators/recipe.js';
 import { parseComment } from '../validators/comment.js';
 import { safeReturn } from './community.js';
-export function recipeController(service, imageService, comments, catalog) {
+export function recipeController(service, imageService, comments, catalog, reads) {
   const read = req => service.get(Number(req.params.id), req.user.householdId, req.user.id);
   const flash = (req, message) => { req.session.flash = message; };
   return {
-    dashboard(req, res) { const result = service.list(req.user); const favorites = service.list(req.user, { favorite: '1' }); res.render('dashboard', { title: 'Domov', recipes: result.recipes.slice(0, 4), count: result.count, favoriteCount: favorites.count }); },
+    dashboard(req, res) { if(!req.user.householdId)return res.render('workspaces/empty',{title:'Brez prostora'});const result = service.list(req.user); const favorites = service.list(req.user, { favorite: '1' }); res.render('dashboard', { title: 'Domov', recipes: result.recipes.slice(0, 4), count: result.count, favoriteCount: favorites.count }); },
     list(req, res) {
       const result = catalog.list(req.user, req.query);
       const viewLink = next => { const params = new URLSearchParams(); for (const [key, value] of Object.entries(result.query)) if (typeof value === 'string' && key !== 'page' && key !== 'view') params.set(key, value); params.set('view', next); return '/recipes?' + params.toString(); };
@@ -13,7 +13,7 @@ export function recipeController(service, imageService, comments, catalog) {
     },
     new(req, res) { res.render('recipes/form', { title: 'Nov recept', recipe: emptyRecipe(), errors: [], preview: false }); },
     edit(req, res) { res.render('recipes/form', { title: 'Uredi recept', recipe: read(req), errors: [], preview: false }); },
-    detail(req, res) { const recipe = read(req); res.render('recipes/detail', { title: 'Recept', recipe, cooking: false, preview: false, comments: comments.list(recipe.id, req.user), commentError: '', commentBody: '' }); },
+    detail(req, res) { const recipe = read(req); const readCounts = reads.record(req.user, recipe.id); res.render('recipes/detail', { title: 'Recept', recipe, readCounts, cooking: false, preview: false, comments: comments.list(recipe.id, req.user), commentError: '', commentBody: '' }); },
     cook(req, res) { res.render('recipes/detail', { title: 'Kuhajmo skupaj', recipe: read(req), cooking: true, preview: false }); },
     save(req, res) {
       const id = req.params.id ? Number(req.params.id) : undefined;

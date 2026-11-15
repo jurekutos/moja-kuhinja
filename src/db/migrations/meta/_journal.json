@@ -36,6 +36,20 @@
       "when": 1794755918843,
       "tag": "0004_late_george_stacy",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1794757631810,
+      "tag": "0005_clean_mikhail_rasputin",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1794759095844,
+      "tag": "0006_remarkable_strong_guy",
+      "breakpoints": true
     }
   ]
 }

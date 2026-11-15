@@ -5,13 +5,13 @@ function safeReturn(value, fallback, roots) {
   return roots.includes(url.pathname) ? url.pathname + url.search : fallback;
 }
 export { safeReturn };
-export function communityController(service, config) {
+export function communityController(service, config, reads) {
   const renderList = (scope, title, base) => (req, res) => res.render('community/index', { title, collectionScope: scope, base, query: req.query, ...service.list(req.user, req.query, scope) });
   return {
     list: renderList('approved', 'Skupna kuharica', '/community'),
     mine: renderList('mine', 'Oddaje mojega prostora', '/submissions'),
     reviews: renderList('reviews', 'Pregled receptov', '/admin/reviews'),
-    detail(req, res) { res.render('community/detail', { title: 'Skupni recept', publication: service.get(Number(req.params.id), req.user) }); },
+    detail(req, res) { const publication = service.get(Number(req.params.id), req.user); const readCounts = reads.record(req.user, publication.id, true); res.render('community/detail', { title: 'Skupni recept', publication, readCounts }); },
     async submit(req, res) { const id = await service.submit(Number(req.params.id), req.user); req.session.flash = 'Recept je poslan v pregled. Zasebne opombe in komentarji niso vključeni.'; res.redirect(`/community/${id}`); },
     review(req, res) { service.review(Number(req.params.id), req.user, req.body.decision, req.body.feedback); req.session.flash = 'Odločitev je shranjena.'; res.redirect('/admin/reviews'); },
     favorite(req, res) { const id = Number(req.params.id); service.toggleFavorite(id, req.user); res.redirect(safeReturn(req.body.returnTo, `/community/${id}`, ['/recipes', '/community', '/submissions', '/admin/reviews'])); },

@@ -6,6 +6,7 @@ export function recipeService(db) {
     const recipe = db.select().from(t.recipes).where(and(eq(t.recipes.id, id), eq(t.recipes.householdId, householdId))).get();
     if (!recipe) { const e = new Error('Recept ne obstaja ali do njega nimate dostopa.'); e.status = 404; throw e; }
     return { ...recipe,
+      authorName: db.select({ name: t.users.name }).from(t.users).where(eq(t.users.id, recipe.createdBy)).get()?.name || 'Neznan avtor',
       notes: db.select().from(t.recipeNotes).where(and(eq(t.recipeNotes.userId, userId), eq(t.recipeNotes.recipeId, id))).get()?.body || '',
       ingredients: db.select().from(t.recipeIngredients).where(eq(t.recipeIngredients.recipeId, id)).orderBy(t.recipeIngredients.position).all(),
       steps: db.select().from(t.steps).where(eq(t.steps.recipeId, id)).orderBy(t.steps.position).all().map(s => s.body),
@@ -14,8 +15,13 @@ export function recipeService(db) {
       favorite: !!db.select().from(t.favorites).where(and(eq(t.favorites.userId, userId), eq(t.favorites.recipeId, id))).get(),
     };
   }
+  function requireAuthor(id, user) {
+    const recipe = get(id, user.householdId, user.id);
+    if (recipe.createdBy !== user.id || user.role === 'viewer') throw Object.assign(new Error('Recept lahko spreminja ali izbriše samo njegov avtor.'), { status: 403 });
+    return recipe;
+  }
   function save(input, user, id) {
-    if (id) get(id, user.householdId, user.id);
+    if (id) requireAuthor(id, user);
     return db.transaction(tx => {
       const { ingredients, steps, categories, notes, ...values } = input;
       const now = new Date().toISOString();
@@ -55,7 +61,7 @@ export function recipeService(db) {
     const rows = db.select().from(t.recipes).where(and(...conditions)).orderBy(query.sort === 'alpha' ? sql`normalize_sl(${t.recipes.title})` : desc(t.recipes.createdAt), desc(t.recipes.id)).limit(24).offset((page - 1) * 24).all();
     return { recipes: rows.map(r => get(r.id, user.householdId, user.id)), count, page, pages: Math.ceil(count / 24) };
   }
-  return { get, save, list,
+  return { get, save, list, requireAuthor,
     saveNotes(id, user, body) {
       get(id, user.householdId, user.id);
       if (typeof body !== 'string' || body.length > 10000) throw Object.assign(new Error('Opombe lahko vsebujejo največ 10000 znakov.'), { status: 422 });
@@ -63,7 +69,7 @@ export function recipeService(db) {
     },
     categories: user => db.select().from(t.categories).where(eq(t.categories.householdId, user.householdId)).orderBy(asc(t.categories.name)).all(),
     toggleFavorite(id, user) { get(id, user.householdId, user.id); const where = and(eq(t.favorites.userId, user.id), eq(t.favorites.recipeId, id)); if (db.select().from(t.favorites).where(where).get()) db.delete(t.favorites).where(where).run(); else db.insert(t.favorites).values({ userId: user.id, recipeId: id }).run(); },
-    remove(id, user) { const recipe = get(id, user.householdId, user.id); db.delete(t.recipes).where(and(eq(t.recipes.id, id), eq(t.recipes.householdId, user.householdId))).run(); return recipe.images; },
+    remove(id, user) { const recipe = requireAuthor(id, user); db.delete(t.recipes).where(and(eq(t.recipes.id, id), eq(t.recipes.householdId, user.householdId))).run(); return recipe.images; },
   };
 }
 export { normalized };

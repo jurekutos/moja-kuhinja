@@ -2,6 +2,8 @@
 
 For a short explanation of the code and where to make changes, see [Code guide](CODE_GUIDE.md).
 
+Account settings, safe workspace deletion and the separate Super Admin dashboard are described in [Administration](docs/ADMINISTRATION.md). Existing installations must first stop the server, make a [matched backup](docs/BACKUP.md), then run `npm run db:migrate` and `npm run build`. No owner is granted automatically; the guide includes the explicit existing-account bootstrap command. This upgrade has not been applied to the actual development database during implementation.
+
 A Slovenian cookbook with private workspaces, invitations, member roles, a moderated shared recipe collection and a shared weekly meal planner. A local Express/EJS modular monolith, with SQLite/Drizzle migrations and a compiled Tailwind stylesheet. No external runtime services, remote fonts, CDN scripts, Docker, imports or shopping-list implementation. See [Workspaces guide](docs/WORKSPACES.md) for roles and sharing, and [Planner guide](docs/PLANNER.md) for Jedilnik.
 
 ## Requirements
@@ -86,6 +88,8 @@ npm start              Run the server
 npm test               Run Node's automated test runner with Supertest
 npm run test:browser   Exercise real desktop/mobile flows using an installed browser
 npm run storage:clean  Remove unreferenced generated images; stop the server first
+npm run backup -- --server-stopped  Back up matched database/uploads after stopping the server
+npm run super-admin:grant -- --email EXISTING_OWNER_EMAIL --confirm-owner  Explicit owner bootstrap
 ```
 
 The compiled stylesheet and migration files are project artifacts. Track them along with `package-lock.json`; ignore `.env`, `node_modules`, SQLite/WAL/SHM files, uploads and `.runtime`.
@@ -157,7 +161,7 @@ Foreign keys are enabled, SQLite uses WAL and a five-second busy timeout. Recipe
 - Upload processing validates decoded content, re-encodes images, strips metadata, bounds pixel/file sizes, and serves every image through authenticated household authorization. Direct file-system URLs do not exist.
 - Normal delete and failed upload paths remove generated files. A filesystem and SQLite transaction cannot be atomic across power loss; stop the server and use `npm run storage:clean` to recover orphan files after interruption. The cleanup command only removes UUID-named generated WebP files absent from the image table.
 - Back up the SQLite database and uploads **together while the server is stopped**. Do not copy only the live SQLite file while WAL is active. Restoring a matched snapshot preserves image references.
-- Keep `.env` private. Changing `SESSION_SECRET` invalidates all sessions. Account password reset and administration are deliberately not exposed over HTTP in Phase 1.
+- Keep `.env` private. Changing `SESSION_SECRET` invalidates all sessions. `/settings` supports changing your own password with current-password verification; arbitrary account resets/deletion are not exposed. Super Admin requires its separate explicit privilege.
 
 ## Tests and verification
 

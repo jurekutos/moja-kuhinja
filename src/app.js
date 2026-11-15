@@ -35,7 +35,8 @@ export function createApp({ db, sqlite, config }) {
   app.use((error, req, res, next) => {
     if (res.headersSent) return next(error);
     const status = error.code?.startsWith('LIMIT_') ? 422 : error.status || 500;
-    if (status >= 500) console.error(error);
+    // Database errors may contain bound values (including password hashes). Never log the full error.
+    if (status >= 500) console.error('Request failed',{name:error.name,status,code:typeof error.code==='string'?error.code:undefined});
     res.status(status).render('error', { title: status === 404 ? 'Ni najdeno' : 'Nekaj je šlo narobe', message: error.code?.startsWith('LIMIT_') ? 'Naložite največ 5 slik hkrati, vsako do 8 MB.' : status === 413 ? 'Poslani podatki so preveliki. Skrajšajte vsebino recepta.' : status === 400 ? 'Zahteve ni mogoče prebrati. Preverite podatke in poskusite znova.' : status < 500 ? error.message : 'Prišlo je do napake. Poskusite znova.' });
   });
   return app;

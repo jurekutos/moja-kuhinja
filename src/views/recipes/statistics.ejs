@@ -1,0 +1,10 @@
+<%- include('../layouts/header') %>
+<a class="back-link" href="/recipes">← Recepti</a>
+<header class="page-header"><div><p class="eyebrow">NAŠI NAJLJUBŠI OKUSI</p><h1>Branost receptov</h1><p class="muted">Odprtja vseh bralcev skupaj. Vsak prijavljeni uporabnik šteje največ enkrat na recept na dan po slovenskem času.</p></div></header>
+<form class="filters" method="get" action="/recipes/statistics"><label>Zbirka<select name="view"><% for (const [value,label] of [['all','Vsi recepti'],['workspace','Moj prostor'],['public','Samo javni']]) { %><option value="<%= value %>" <%= view === value ? 'selected' : '' %>><%= label %></option><% } %></select></label><label>Najbolj brani<select name="period"><option value="total" <%= period === 'total' ? 'selected' : '' %>>Ves čas</option><option value="month" <%= period === 'month' ? 'selected' : '' %>>Ta mesec</option></select></label><button class="button">Prikaži</button></form>
+<section class="panel"><h2>Vsa šteta odprtja v izbrani zbirki</h2><%- include('../components/read-counts', { readCounts: totals }) %><p class="muted small">Zasebni in javni recepti imajo ločene števce. Štetje se začne z uvedbo te možnosti.</p></section>
+<h2>Najbolj brani recepti</h2>
+<% if (!recipes.length) { %><div class="empty-state"><p>Za izbrano obdobje še ni štetih odprtij.</p></div><% } %>
+<% recipes.forEach((recipe,index) => { %><article class="panel member-row"><div><p class="eyebrow"><%= index + 1 %> · <%= recipe.kind === 'public' ? 'Javni recept' : 'Moj prostor' %></p><h3><a href="/<%= recipe.kind === 'public' ? 'community' : 'recipes' %>/<%= recipe.id %>"><%= recipe.title %></a></h3><%- include('../components/read-counts', { readCounts: recipe }) %></div></article><% }); %>
+<% if (recipes.length === 50) { %><p class="muted">Prikazanih je največ 50 najbolj branih receptov. Skupna števca vključujeta vse recepte v izbrani zbirki.</p><% } %>
+<%- include('../layouts/footer') %>

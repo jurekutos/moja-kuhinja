@@ -19,7 +19,7 @@ const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'moja-kuhinja-browser-
 const connection = openDatabase(path.join(directory, 'test.sqlite'), true);
 const password = randomBytes(24).toString('hex');
 connection.db.insert(households).values({ id: 1, name: 'Preizkusna kuhinja' }).run();
-connection.db.insert(users).values({ id: 1, name: 'Preizkus', email: 'browser@example.test', passwordHash: await argon2.hash(password, { type: argon2.argon2id }), isModerator: true }).run();
+connection.db.insert(users).values({ id: 1, name: 'Preizkus', email: 'browser@example.test', passwordHash: await argon2.hash(password, { type: argon2.argon2id }), isModerator: true,isSuperAdmin:true,createdAt:new Date().toISOString() }).run();
 connection.db.insert(members).values({ userId: 1, householdId: 1, role: 'admin' }).run();
 const app = createApp({ ...connection, config: { secret: randomBytes(48).toString('hex'), production: false, uploadDir: path.join(directory, 'uploads'), trustProxy: false } });
 const server = await new Promise(resolve => { const instance = app.listen(0, '127.0.0.1', () => resolve(instance)); });
@@ -40,6 +40,9 @@ try {
   await page.goto(base + '/login');
   await page.getByLabel('E-poštni naslov').fill('browser@example.test'); await page.getByLabel('Geslo', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Prijava' }).click(); await page.waitForURL(base + '/');
+  await page.goto(base+'/settings');await page.getByLabel('Prikazno ime',{exact:true}).fill('Preizkus profil');await page.getByRole('button',{name:'Shrani ime',exact:true}).click();await page.waitForURL(base+'/settings');assert.equal(await page.getByLabel('Prikazno ime',{exact:true}).inputValue(),'Preizkus profil');
+  for(const url of ['/super-admin','/super-admin/users','/super-admin/workspaces','/super-admin/statistics','/workspace/delete']){await page.goto(base+url);assert.equal(await page.locator('h1').count(),1);}
+  await fs.mkdir('.runtime/screenshots',{recursive:true});await page.goto(base+'/settings');await page.screenshot({path:'.runtime/screenshots/settings-desktop.png',fullPage:true});await page.goto(base+'/super-admin');await page.screenshot({path:'.runtime/screenshots/super-admin-desktop.png',fullPage:true});
   await page.goto(base + '/recipes/new');
   await page.getByLabel('Naslov recepta').fill('Piščanec iz preizkusne kuhinje');
   await page.getByLabel('Kratek opis').fill('Preizkus dinamičnega obrazca, fotografij in porcij.');
@@ -137,7 +140,7 @@ try {
   await page.screenshot({ path: '.runtime/screenshots/desktop.png', fullPage: true });
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 844 });
-    for (const url of ['/', '/recipes', '/recipes?view=all', '/recipes?view=public', `/recipes/${id}`, `/recipes/${id}/edit`, `/recipes/${id}/cook`, '/planner', '/planner/meal?date=2026-11-16&slot=lunch', '/workspace', '/admin/invitations', '/admin/reviews', '/community', new URL(communityUrl).pathname]) {
+    for (const url of ['/', '/recipes', '/recipes/statistics', '/recipes/statistics?view=public&period=month', '/recipes?view=all', '/recipes?view=public', `/recipes/${id}`, `/recipes/${id}/edit`, `/recipes/${id}/cook`, '/planner', '/planner/meal?date=2026-11-16&slot=lunch', '/workspace', '/settings', '/workspace/delete', '/super-admin', '/super-admin/users', '/super-admin/workspaces', '/super-admin/workspaces/1', '/super-admin/statistics', '/admin/invitations', '/admin/reviews', '/community', new URL(communityUrl).pathname]) {
       await page.goto(base + url); assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Horizontal overflow at ${width}px: ${url}`);
     }
   }
@@ -147,6 +150,9 @@ try {
   page.once('dialog', dialog => dialog.dismiss()); await page.getByRole('button', { name: 'Izbriši recept', exact: true }).click(); assert.equal(new URL(page.url()).pathname, '/recipes/' + id);
   page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', { name: 'Izbriši recept', exact: true }).click(); await page.waitForURL(base + '/recipes'); assert.equal(await page.locator('.recipe-card').count(), 1);
   await page.goto(base + '/recipes/' + copyId); page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', { name: 'Izbriši recept', exact: true }).click(); await page.waitForURL(base + '/recipes'); assert.equal(await page.locator('.recipe-card').count(), 0);
+  await page.goto(base+'/settings');await page.getByLabel('Trenutno geslo',{exact:true}).fill(password);await page.getByLabel('Novo geslo',{exact:true}).fill(password+'new');await page.getByLabel('Ponovite novo geslo',{exact:true}).fill(password+'new');await page.getByRole('button',{name:'Spremeni geslo',exact:true}).click();await page.waitForURL(base+'/settings');assert.ok(await page.getByRole('status').textContent());
+  await page.goto(base+'/workspace/delete');await page.getByLabel('Za potrditev vnesite točno ime prostora',{exact:true}).fill('WRONG');await page.getByRole('button',{name:'Trajno izbriši prostor',exact:true}).click();await page.locator('.errors[role="alert"]').waitFor();
+  await page.getByLabel('Za potrditev vnesite točno ime prostora',{exact:true}).fill('Preizkusna kuhinja');await page.getByRole('button',{name:'Trajno izbriši prostor',exact:true}).click();await page.waitForURL(base+'/settings');assert.ok((await page.locator('main').textContent()).includes('Trenutno niste član'));await page.goto(base+'/super-admin');assert.equal(await page.locator('h1').textContent(),'Pregled platforme');
   console.log('Browser smoke passed: landing, login, recipe CRUD, uploads, notes/comments, private and global list hearts, filters, moderation, global copying, weekly planner add/edit/remove and servings, invitations/signup, mobile layouts and delete confirmation.');
   console.log('Screenshots: .runtime/screenshots/{desktop,mobile}.png');
 } finally {
