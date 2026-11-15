@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1794748260758,
+      "tag": "0000_legal_roxanne_simpson",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1794752796115,
+      "tag": "0001_sticky_frog_thor",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794753344115,
+      "tag": "0002_old_gateway",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1794755348993,
+      "tag": "0003_lame_doctor_octopus",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1794755918843,
+      "tag": "0004_late_george_stacy",
+      "breakpoints": true
+    }
+  ]
+}

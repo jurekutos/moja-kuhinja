@@ -1,0 +1,19 @@
+<section class="panel stack comments-panel" id="comments" aria-labelledby="comments-heading">
+  <div><p class="eyebrow">POGOVOR V VAJINI KUHINJI</p><h2 id="comments-heading">Komentarji (<%= comments.length %>)</h2><p class="muted small">Komentarje vidijo vsi člani vajinega gospodinjstva. Moje opombe ostajajo zasebne.</p></div>
+  <% if (comments.length) { %>
+    <ol class="comment-list"><% comments.forEach(comment => { %>
+      <li class="comment-item"><div class="comment-meta"><strong><%= comment.author %></strong><time class="muted small" datetime="<%= comment.createdAt %>"><%= new Date(comment.createdAt).toLocaleString('sl-SI', { timeZone: 'Europe/Ljubljana', dateStyle: 'medium', timeStyle: 'short' }) %></time></div>
+        <p class="preserve"><%= comment.body %></p>
+        <% if (comment.userId === user.id) { %><form action="/recipes/<%= recipe.id %>/comments/<%= comment.id %>/delete" method="post" data-confirm="Res izbrišem ta komentar?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="text-link danger" aria-label="Izbriši svoj komentar">Izbriši komentar</button></form><% } %>
+      </li>
+    <% }); %></ol>
+  <% } else { %><p class="muted">Še ni komentarjev. Delite prvi vtis ali kuharski namig.</p><% } %>
+  <form action="/recipes/<%= recipe.id %>/comments" method="post" class="stack">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label for="comment-body">Dodaj komentar</label>
+    <% if (commentError) { %><p id="comment-error" class="danger" role="alert"><%= commentError %></p><% } %>
+    <textarea id="comment-body" name="body" rows="3" required maxlength="2000" placeholder="Kako je uspelo? Kaj bi naslednjič pripravili drugače?" aria-describedby="comment-help<%= commentError ? ' comment-error' : '' %>" <%- commentError ? 'aria-invalid="true" autofocus' : '' %>><%= commentBody %></textarea>
+    <small id="comment-help" class="muted">Največ 2000 znakov. Objavljeno bo z vašim imenom.</small>
+    <div><button class="button">Objavi komentar</button></div>
+  </form>
+</section>
