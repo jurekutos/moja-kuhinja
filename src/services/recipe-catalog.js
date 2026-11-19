@@ -52,7 +52,7 @@ export function recipeCatalog(db, recipes) {
       const privateRows = sql`select 'workspace' as kind, ${t.recipes.id} as id, ${localizedTitle} as title, ${t.recipes.createdAt} as created from ${t.recipes} where ${sql.join(privateFilters, sql` and `)}`;
       // Prefer the matching workspace original in the combined collection. Apply
       // this before counting/pagination; public-only browsing remains independent.
-      if (view === 'all') publicFilters.push(sql`not exists (select 1 from (${privateRows}) workspace_original where workspace_original.id=${t.publications.recipeId})`);
+      if (view === 'all') publicFilters.push(sql`not exists (select 1 from (${privateRows}) workspace_original where workspace_original.id=${t.publications.recipeId} or exists(select 1 from public_imports pi where pi.household_id=${user.householdId} and pi.publication_id=${t.publications.id} and pi.language=${language} and pi.recipe_id=workspace_original.id))`);
       const publicRows = sql`select 'public' as kind, ${t.publications.id} as id, json_extract(${snapshot}, '$.title') as title, ${t.publications.createdAt} as created from ${t.publications} where ${sql.join(publicFilters, sql` and `)}`;
       const union = view === 'all' ? sql`${privateRows} union all ${publicRows}` : view === 'public' ? publicRows : privateRows;
       const count = db.get(sql`select count(*) as count from (${union})`).count;
@@ -63,7 +63,7 @@ export function recipeCatalog(db, recipes) {
       const items = rows.map(row => {
         if (row.kind === 'workspace') {
           const recipe=recipes.get(row.id, user.householdId, user.id,language);
-          const publication=view==='all' ? db.get(sql`select p.id from recipe_publications p where p.recipe_id=${row.id} and exists(${publicVersion(sql`p.id`,language)}) order by p.created_at desc,p.id desc limit 1`) : null;
+          const publication=view==='all' ? db.get(sql`select p.id from recipe_publications p where (p.recipe_id=${row.id} or exists(select 1 from public_imports pi where pi.publication_id=p.id and pi.recipe_id=${row.id} and pi.household_id=${user.householdId} and pi.language=${language})) and exists(${publicVersion(sql`p.id`,language)}) order by p.created_at desc,p.id desc limit 1`) : null;
           return {...recipe,publicPublicationId:publication?.id || null};
         }
         const publication = db.get(sql`select ${snapshot} as snapshot from ${t.publications} where ${t.publications.id} = ${row.id} and exists(${publicVersion(t.publications.id,language)})`);

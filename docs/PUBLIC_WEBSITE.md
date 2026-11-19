@@ -1,5 +1,7 @@
 # Public website and SEO integration
 
+**19 November 2026 update:** the public homepage now applies to signed-in users too, and the private dashboard is `/kitchen`. Dedicated suggestions and public administration replace the profile submission panel. Apply migration 0009 before using the current version. See [application flows](architecture/APPLICATION_FLOWS.md) and [site map](architecture/SITE_MAP.md). The inventory below records the earlier website integration; the current architecture documents describe the additional library features.
+
 This extends the existing Express/EJS monolith. The private application, SQLite database, account system and publication moderation remain in place. No deployment, domain configuration, new database, data reset or migration was performed.
 
 ## Repository inventory at implementation
@@ -16,7 +18,7 @@ Start the app using the existing `npm run dev` or `npm start` command. The usual
 
 | URL | Behavior |
 | --- | --- |
-| `/` | Redirect to preferred language; visitors see the landing page and signed-in users keep their dashboard |
+| `/` | Redirect to preferred language; everyone sees public discovery; signed-in dashboard is `/{language}/kitchen` |
 | `/sl/welcome`, `/en/welcome`, `/de/welcome` | Public website for visitors and signed-in users |
 | `/sl/community`, `/en/community`, `/de/community` | Approved public directory in the URL's language |
 | `/sl/community/1` | Existing numeric URL; if approved in Slovenian, redirects to its canonical slug |
@@ -47,7 +49,7 @@ Images are selected from an approved language snapshot, with numeric endpoint va
 
 ## Canonicals, slugs and structured data
 
-Recipe slugs combine the existing publication ID and a normalized approved title. The ID guarantees uniqueness; immutable approved snapshots make their slugs stable. An old numeric or noncanonical slug URL redirects to the current canonical path only when its requested language is public. No migration or private-source title lookup is needed.
+Recipe slugs combine the existing publication ID and a normalized approved title. The ID guarantees uniqueness; the current approved title determines the canonical slug, and Super Admin title edits redirect old slugs through the same stable ID. An old numeric or noncanonical slug URL redirects to the current canonical path only when its requested language is public. No migration or private-source title lookup is needed.
 
 Public HTML includes title/description, canonical URL, HTML language, reciprocal hreflang for available versions, Open Graph and social image metadata. Filtered/favorite/search pages use `noindex, follow`; paginated directory pages have their own canonical page parameter. Private/authenticated-only pages retain authentication and receive `X-Robots-Tag` plus noindex metadata. Robots rules are crawl hints, never access control.
 
@@ -72,7 +74,7 @@ For local use, an empty `SITE_URL` produces `http://127.0.0.1:PORT`. A future pr
 
 Legal/contact values are shown as escaped text. Empty values show localized placeholders; no operator name, address or legal identity is invented. Complete those details and review the factual privacy/legal copy before making a publicly reachable installation. Registration remains invitation-only: changing that product policy requires a separate decision and implementation.
 
-Public recipes without approved EN/DE versions correctly remain absent in those directories. Add and review translations through the existing profile/publication workflow. Missing photos remain placeholders; missing legal data and invitation-only signup are explicit states. No blog CMS, newsletter, ads, payments, shopping list, AI translation/import or Google Analytics was implemented.
+Public recipes without approved EN/DE versions correctly remain absent in those directories. Create approved content in each language through public administration; legacy source-linked submissions retain their translation workflow. Missing photos remain placeholders; missing legal data and invitation-only signup are explicit states. No blog CMS, newsletter, ads, payments, shopping list, AI translation/import or Google Analytics was implemented.
 
 ## Changed files
 
@@ -97,3 +99,7 @@ Initially implemented without automated checks as requested. The user subsequent
 - `npm run test:browser:i18n`: language preferences, localized routes, translation editing, per-language publication approval and EN/DE layouts at 1440/390/320px passed.
 
 Integration and browser expectations now use localized URLs and the current public/private navigation. A genuine German profile heading overflow at 320px was fixed. `tests/public-site.test.js` verifies anonymous approved-language visibility, pending-language denial, canonical redirects independent of the Host header, safe Recipe JSON-LD, exclusion of private snapshot fields, sitemap withdrawal and authenticated access boundaries. All fixture databases and uploads are temporary; real user data was not migrated or reset. These checks do not constitute a full SEO, accessibility or cross-browser audit. Future checks still require an explicit user request under `AGENTS.md`.
+
+## Latest library verification (19 November 2026)
+
+All 73 server tests, the CSS production build and all three browser suites passed. `test:browser:library` covers feature selection/order, admin draft/publish/image management, dedicated member suggestions, review edits, duplicate-safe independent imports, combined collection deduplication, rejection/unpublishing and public/admin layouts at 1440/390/320px. The multilingual suite additionally covers the new forms in EN/DE. Image deletion/independent-copy safety, authorization, isolation and repeated migrations/seeding are covered by `tests/public-library.test.js`. Test fixtures remain temporary; the development database and uploads were not migrated, seeded or reset.

@@ -84,7 +84,7 @@ test('members may leave only their own membership; active workspace falls back s
   await editor.post('/sl/workspaces/2/leave').type('form').send({_csrf:tokens[3],confirm:'leave'}).expect(302);
   const page=await editor.get('/sl/settings');assert.ok(page.text.includes('Owner home'));assert.ok(!page.text.includes('Member home'));
   await editor.get('/sl/recipes/1').expect(404);assert.equal(c.db.select().from(t.households).all().length,3);
-  await editor.post('/sl/workspaces/1/leave').type('form').send({_csrf:tokens[3],confirm:'leave'}).expect(302);const empty=await editor.get('/sl/').expect(200);assert.match(empty.text,/Trenutno niste član/);await editor.get('/sl/settings').expect(200);
+  await editor.post('/sl/workspaces/1/leave').type('form').send({_csrf:tokens[3],confirm:'leave'}).expect(302);const empty=await editor.get('/sl/kitchen').expect(200);assert.match(empty.text,/Trenutno niste član/);await editor.get('/sl/settings').expect(200);
   await admin.post('/sl/workspaces/2/leave').type('form').send({_csrf:tokens[2],confirm:'leave'}).expect(422);
 });
 test('workspace admins rename only their active space and existing role/remove logic keeps last admin',async()=>{
@@ -116,7 +116,7 @@ test('workspace deletion requires admin, CSRF and exact name; preserves other da
   assert.equal(recipes.get(outsideId,1,1).title,'Keep other space');const approved=c.db.select().from(t.publications).where(eq(t.publications.id,publicationId)).get();assert.equal(approved.status,'approved');assert.equal(approved.householdId,null);assert.equal(approved.recipeId,null);assert.equal(c.db.select().from(t.publications).where(eq(t.publications.id,pendingId)).get(),undefined);
   await fs.access(path.join(root,'uploads',publicImage.filename));await assert.rejects(fs.access(path.join(root,'uploads',privateImage.filename)));await assert.rejects(fs.access(path.join(root,'uploads',pendingImage.filename)));assert.equal(c.db.select().from(t.communityFavorites).all().length,1);assert.deepEqual(c.sqlite.pragma('foreign_key_check'),[]);
   await fs.access(path.join(root,'uploads',unrelatedImage.filename));assert.equal(c.db.select().from(t.mealPlanEntries).where(eq(t.mealPlanEntries.householdId,1)).get().publicationId,publicationId);assert.equal(c.db.select().from(t.comments).where(eq(t.comments.recipeId,recipeId)).all().length,0);assert.equal(c.db.select().from(t.recipeNotes).where(eq(t.recipeNotes.recipeId,recipeId)).all().length,0);assert.equal(c.db.select().from(t.favorites).where(eq(t.favorites.recipeId,recipeId)).all().length,0);
-  assert.equal(c.db.select().from(t.auditEvents).all().filter(e=>e.action==='workspace_deleted' && e.workspaceId===2).length,1);await admin.get('/sl/').expect(200);await admin.get('/sl/settings').expect(200);
+  assert.equal(c.db.select().from(t.auditEvents).all().filter(e=>e.action==='workspace_deleted' && e.workspaceId===2).length,1);await admin.get('/sl/kitchen').expect(200);await admin.get('/sl/settings').expect(200);
 });
 test('Super Admin can delete another workspace without joining it; action is audited and ordinary moderators cannot',async()=>{
   await moderator.post('/sl/super-admin/workspaces/3/delete').type('form').send({_csrf:tokens[5],confirmation:'Other home'}).expect(403);
@@ -127,7 +127,7 @@ test('an admin may leave when another admin remains, and the active workspace is
   const id=c.db.insert(t.households).values({name:'Two admins'}).returning({id:t.households.id}).get().id;
   c.db.insert(t.members).values([{userId:1,householdId:id,role:'admin'},{userId:2,householdId:id,role:'admin'}]).run();
   await admin.post('/sl/workspace/switch').type('form').send({_csrf:tokens[2],householdId:id}).expect(302);
-  await admin.post(`/sl/workspaces/${id}/leave`).type('form').send({_csrf:tokens[2],confirm:'leave'}).expect(302);const page=await admin.get('/sl/').expect(200);assert.match(page.text,/Trenutno niste član/);
+  await admin.post(`/sl/workspaces/${id}/leave`).type('form').send({_csrf:tokens[2],confirm:'leave'}).expect(302);const page=await admin.get('/sl/kitchen').expect(200);assert.match(page.text,/Trenutno niste član/);
   assert.equal(c.db.select().from(t.members).where(eq(t.members.householdId,id)).all().length,1);
 });
 test('failed workspace deletion rolls back all database changes and never removes files',async()=>{

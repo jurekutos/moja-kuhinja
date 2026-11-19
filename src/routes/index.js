@@ -19,6 +19,7 @@ import { plannerService } from '../services/planner.js';
 import { plannerController } from '../controllers/planner.js';
 import { MAX_IMAGE_SIZE } from '../services/images.js';
 import { accountAdminRoutes } from './account-admin.js';
+import { publicLibraryRoutes } from './public-library.js';
 export function routes(db, recipes, images, config, comments) {
   const reads = recipeReadService(db);
   const translations=recipeTranslationService(db,recipes);const globalCatalog=globalCatalogService(db);
@@ -38,9 +39,10 @@ export function routes(db, recipes, images, config, comments) {
   router.get('/join/:token', workspace.join);
   router.post('/join/:token', limit, verifyCsrf, workspace.accept);
   router.use(requireAuth);
+  router.use(publicLibraryRoutes(db,config));
   router.use(accountAdminRoutes(db,workspaces,config));
   router.post('/logout', verifyCsrf, auth.logout);
-  router.get('/', controller.dashboard);
+  router.get('/kitchen', controller.dashboard);
   router.get('/workspace', workspace.page);
   router.post('/workspace/switch', verifyCsrf, workspace.switch);
   router.post('/workspace/invitations', verifyCsrf, requireAdmin, workspace.invite);
@@ -54,7 +56,7 @@ export function routes(db, recipes, images, config, comments) {
   router.get('/community/:id', community.detail);
   router.get('/community/:id/images/:index', community.image);
   router.post('/community/:id/favorite', verifyCsrf, community.favorite);
-  router.post('/community/:id/copy', verifyCsrf, requireEditor, community.copy);
+  router.post('/community/:id/copy', verifyCsrf, community.copy);
   router.post('/community/:id/submit-draft',verifyCsrf,requireEditor,community.submitDraft);
   router.post('/community/:id/languages',verifyCsrf,requireEditor,community.addLanguage);
   router.post('/community/:id/review', verifyCsrf, requireModerator, community.review);

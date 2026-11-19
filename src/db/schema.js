@@ -1,5 +1,17 @@
 import { sqliteTable, text, integer, primaryKey, index, uniqueIndex, check } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
+export const publicImports = sqliteTable('public_imports', {
+  householdId:integer('household_id').notNull().references(()=>households.id,{onDelete:'cascade'}),
+  publicationId:integer('publication_id').notNull().references(()=>publications.id,{onDelete:'cascade'}),
+  language:text().notNull(),recipeId:integer('recipe_id').notNull().references(()=>recipes.id,{onDelete:'cascade'}),
+},t=>[primaryKey({columns:[t.householdId,t.publicationId,t.language]})]);
+export const featuredRecipes = sqliteTable('featured_recipes', {
+  language:text().notNull(),position:integer().notNull(),
+  publicationId:integer('publication_id').notNull().references(()=>publications.id,{onDelete:'cascade'}),
+},t=>[primaryKey({columns:[t.language,t.position]}),uniqueIndex('featured_recipe_unique').on(t.language,t.publicationId),check('featured_position_valid',sql`${t.position} between 1 and 3`)]);
+export const publicSeedEntries = sqliteTable('public_seed_entries', {
+  key:text().primaryKey(),publicationId:integer('publication_id').notNull().references(()=>publications.id,{onDelete:'cascade'}),
+});
 export const households = sqliteTable('households', {
   id: integer().primaryKey(), name: text().notNull(), plannerMeals: text('planner_meals').notNull().default('both'),
   createdAt: text('created_at'),

@@ -28,7 +28,9 @@
     "super-admin:grant": "node --env-file=.env scripts/grant-super-admin.js",
     "test": "node --test --test-concurrency=1 tests/*.test.js",
     "test:browser": "node scripts/browser-smoke.js",
-    "test:browser:i18n": "node scripts/browser-i18n.js"
+    "test:browser:i18n": "node scripts/browser-i18n.js",
+    "seed:public": "node --env-file=.env scripts/seed-public-library.js",
+    "test:browser:library": "node scripts/browser-library.js"
   },
   "dependencies": {
     "argon2": "^0.44.0",

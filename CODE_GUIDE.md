@@ -140,3 +140,9 @@ See [docs/READING_STATS.md](docs/READING_STATS.md) for daily counting rules, sta
 
 The verification run on 15 November 2026 passed all 72 server tests, the production CSS build and both browser suites. Public website regression coverage lives in `tests/public-site.test.js`; browser workflows live in `scripts/browser-smoke.js` and `scripts/browser-i18n.js`. Tests request language-prefixed URLs explicitly and use isolated temporary databases. Publication controls are exercised through My profile. When changing localized navigation or approval visibility, update these workflows alongside the implementation. See `docs/PUBLIC_WEBSITE.md` for the checks and their limits. Run checks only when explicitly requested, as required by `AGENTS.md`.
 
+
+## Public library maintenance
+
+`src/services/public-library.js` owns dedicated suggestions, Super Admin snapshot editing, approvals, featured slots and independent public image management. `src/routes/public-library.js` exposes these functions through the existing authenticated router. `src/services/community.js` retains legacy pending submissions and now tracks duplicate-safe private imports. `src/services/seed-public-library.js` and `src/db/public-recipes.js` provide the optional idempotent starter library. `src/views/library/` reuses the existing ingredient/step browser editor and design system. New interface text is in `src/locales/{sl,en,de}/library.json`.
+
+See [implemented application flows](docs/architecture/APPLICATION_FLOWS.md), [routes](docs/architecture/SITE_MAP.md), [fields](docs/architecture/DATABASE_SCHEMA.md) and [relationships](docs/architecture/DATABASE_ERD.md). Apply migration 0009 before using these features. The public homepage is now `/`; private navigation and login use `/kitchen`. `npm run test:browser:library` covers the new UI. Checks still require explicit user authorization under `AGENTS.md`.

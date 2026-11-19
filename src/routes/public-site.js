@@ -10,7 +10,7 @@ export function publicSiteRoutes(db,config){
   router.get('/robots.txt',markPublic,controller.robots);
   router.get('/sitemap.xml',markPublic,controller.sitemap);
   router.get('/welcome',markPublic,controller.landing);
-  router.get('/',(req,res,next)=>{if(req.user)return next();res.locals.publicWebsite=true;controller.landing(req,res);});
+  router.get('/',markPublic,controller.landing);
   router.get('/community',markPublic,controller.directory);
   router.get('/recepti',markPublic,controller.alias);
   router.get('/rezepte',markPublic,controller.alias);

@@ -18,12 +18,12 @@ export function communityService(db, recipeService, imageService, directory) {
     if(!row)fail(tr('common:unavailable'),404);
     const language=options.language || user.language || 'sl';
     const ownWorkspace=Boolean(user.householdId && row.householdId===user.householdId);
-    const review=(options.review || row.status!=='approved') && (user.isModerator || ownWorkspace);
+    const review=(options.review || row.status!=='approved') && (user.isModerator || user.isSuperAdmin || ownWorkspace || row.submittedBy===user.id && JSON.parse(row.snapshot).suggestion===true);
     if(options.language && language!==(user.language || 'sl') && !review)fail(tr('common:unavailable'),404);
     const version=db.select().from(tables.publicationTranslations).where(and(eq(tables.publicationTranslations.publicationId,id),eq(tables.publicationTranslations.language,language))).get();
     if(!version || !review && (version.status!=='approved' || !version.complete)) {
       // Unpublished submissions remain visible to their owners and moderators only.
-      if(!options.language && row.status!=='approved' && (user.isModerator || ownWorkspace)) {
+      if(!options.language && row.status!=='approved' && (user.isModerator || user.isSuperAdmin || ownWorkspace || row.submittedBy===user.id && JSON.parse(row.snapshot).suggestion===true)) {
         const original=JSON.parse(row.snapshot).language || 'sl';
         if(original!==language)return get(id,user,{language:original,review:true});
       }
@@ -36,7 +36,7 @@ export function communityService(db, recipeService, imageService, directory) {
   function list(user,query={},scope='approved') {
     if(scope==='reviews'&&!user.isModerator)fail(tr("community:sbdabedf54319"),403);
     const language=user.language || 'sl';
-    const conditions=[scope==='mine'?sql`p.household_id=${user.householdId}`:scope==='reviews'?sql`v.status='pending'`:sql`v.status='approved' and v.complete=1 and v.language=${language}`];
+    const conditions=[scope==='mine'?sql`(p.submitted_by=${user.id} or (p.recipe_id is not null and p.household_id=${user.householdId}))`:scope==='reviews'?sql`v.status='pending'`:sql`v.status='approved' and v.complete=1 and v.language=${language}`];
     if(typeof query.q==='string'&&query.q.trim())conditions.push(sql`instr(normalize_sl(json_extract(v.snapshot,'$.title')),normalize_sl(${query.q.trim().slice(0,160)}))>0`);
     if(query.favorite==='1')conditions.push(sql`exists(select 1 from community_favorites where publication_id=p.id and user_id=${user.id})`);
     const where=sql.join(conditions,sql` and `);
@@ -127,13 +127,26 @@ export function communityService(db, recipeService, imageService, directory) {
       const where = and(eq(communityFavorites.userId, user.id), eq(communityFavorites.publicationId, id));
       if (favorite(id, user.id)) db.delete(communityFavorites).where(where).run(); else db.insert(communityFavorites).values({ userId: user.id, publicationId: id }).run();
     },
-    async copy(id, user) {
+    async copy(id, user, householdId=user.householdId) {
+      const membership=db.select().from(tables.members).where(and(eq(tables.members.userId,user.id),eq(tables.members.householdId,Number(householdId)))).get();
+      if(!membership)fail(tr('common:unavailable'),403);
+      user={...user,householdId:membership.householdId,role:membership.role};
       requireEditor(user);
       const publication = get(id, user); if (publication.status !== 'approved') fail(tr("community:sd43827bef8b5"));
+      const importWhere=and(eq(tables.publicImports.householdId,user.householdId),eq(tables.publicImports.publicationId,id),eq(tables.publicImports.language,publication.language));
+      const existing=db.select().from(tables.publicImports).where(importWhere).get();
+      if(existing)return existing.recipeId;
       const recipe = publication.recipe;
       const parsed = parseRecipe({ ...recipe, originalLanguage:publication.language, notes: '', status: 'published', categories: recipe.categories.join(', '), ingredientsJson: JSON.stringify(recipe.ingredients.map(i => ({ ...i, quantity: i.quantity ?? '' }))), stepsJson: JSON.stringify(recipe.steps) });
       if (!parsed.success) fail(tr("community:s40ece1ee192f"));
-      const recipeId = recipeService.save(parsed.data, user);
+      parsed.data.sourceDescription=[recipe.sourceDescription,`${recipe.author || ''} · /${publication.language}/community/${id}`].filter(Boolean).join(' · ').slice(0,1000);
+      let recipeId;
+      db.transaction(tx=>{
+        const existing=tx.select().from(tables.publicImports).where(importWhere).get();
+        if(existing){recipeId=existing.recipeId;return;}
+        recipeId=recipeService.save(parsed.data,user);
+        tx.insert(tables.publicImports).values({householdId:user.householdId,publicationId:id,language:publication.language,recipeId}).run();
+      });
       try {
         const files = [];
         for (const image of recipe.images) { const buffer = await fs.readFile(path.join(directory, image.filename)); files.push({ buffer, size: buffer.length, mimetype: 'image/webp' }); }

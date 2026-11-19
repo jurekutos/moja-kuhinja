@@ -4,12 +4,12 @@ import { languages,tr } from '../i18n/index.js';
 export function publicSiteController(cookbook,seo,config,reads) {
   function render(req,res,view,data,metadata){res.removeHeader('X-Robots-Tag');if(metadata.robots)res.set('X-Robots-Tag',metadata.robots);return res.render(view,{...data,title:metadata.title,seo:metadata,publicWebsite:true});}
   return {
-    landing(req,res){const featured=cookbook.list(req.language,{},6,req.user).recipes;render(req,res,'landing',{featured},seo.metadata(req.language,'/welcome',tr('public:homeTitle'),tr('public:homeDescription'),undefined,'/images/landing-pasta.webp'));},
+    landing(req,res){const featured=cookbook.featured(req.language,req.user);render(req,res,'landing',{featured},seo.metadata(req.language,'/welcome',tr('public:homeTitle'),tr('public:homeDescription'),undefined,'/images/landing-pasta.webp'));},
     directory(req,res){
       const result=cookbook.list(req.language,req.query,24,req.user);
       const canonical='/community'+(result.page>1?'?page='+result.page:'');
       const metadata=seo.metadata(req.language,canonical,tr('public:directoryTitle')+(result.page>1?' · '+result.page:'')+' · Moja kuhinja',tr('public:directoryDescription'));
-      if(result.query.q||result.query.category||result.query.sort!=='newest'||result.query.favorite)metadata.robots='noindex, follow';
+      if(result.query.q||result.query.ingredient||result.query.maxTime||result.query.category||result.query.sort!=='newest'||result.query.favorite)metadata.robots='noindex, follow';
       if(result.page>1)metadata.alternates=[];
       const pageLink=page=>{const params=new URLSearchParams();for(const [key,value] of Object.entries(result.query))if(value && !(key==='sort'&&value==='newest'))params.set(key,value);if(page>1)params.set('page',String(page));return '/community'+(params.size?'?'+params.toString():'');};
       render(req,res,'public/recipes',{...result,pageLink},metadata);
@@ -47,7 +47,7 @@ export function publicSiteController(cookbook,seo,config,reads) {
       res.removeHeader('X-Robots-Tag');res.type('application/xml').send(seo.sitemap(entries));
     },
     robots(req,res){
-      const privatePaths=['recipes','settings','super-admin','admin','workspace','workspaces','planner','shopping','submissions','login','join','images','ingredients'];
+      const privatePaths=['kitchen','suggestions','recipes','settings','super-admin','admin','workspace','workspaces','planner','shopping','submissions','login','join','images','ingredients'];
       const rules=privatePaths.flatMap(route=>['',...languages].map(language=>`Disallow: /${language?language+'/':''}${route}`));
       res.removeHeader('X-Robots-Tag');res.type('text/plain').send('User-agent: *\nAllow: /\nAllow: /images/landing-pasta.webp\n'+rules.join('\n')+'\nSitemap: '+seo.origin+'/sitemap.xml\n');
     },

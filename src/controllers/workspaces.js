@@ -13,12 +13,12 @@ export function workspaceController(service) {
     revoke(req, res) { service.revoke(req.user, Number(req.params.invitationId)); req.session.flash = tr("workspaces:s531235b6b3ac"); res.redirect('/workspace'); },
     revokePlatform(req, res) { service.revoke(req.user, Number(req.params.invitationId), true); req.session.flash = tr("workspaces:s531235b6b3ac"); res.redirect('/admin/invitations'); },
     member(req, res) { service.changeMember(req.user, Number(req.params.userId), req.body.role); req.session.flash = tr("workspaces:sd839fd23aae5"); res.redirect('/workspace'); },
-    switch(req, res) { req.session.householdId = service.switch(req.user, Number(req.body.householdId)); res.redirect(req.body.destination==='/workspace'?'/workspace':'/'); },
+    switch(req, res) { req.session.householdId = service.switch(req.user, Number(req.body.householdId)); res.redirect(req.body.destination==='/workspace'?'/workspace':'/kitchen'); },
     join(req, res) { joinPage(req, res); },
     async accept(req, res, next) {
       try {
         const accepted = await service.accept(req.params.token, {...req.body,language:req.language}, req.user);
-        req.session.regenerate(error => { if (error) return next(error); req.session.userId = accepted.userId;req.session.authVersion=accepted.authVersion; req.session.householdId = accepted.householdId; req.session.flash = tr("workspaces:s01d7a745e2c0"); req.session.save(error => error ? next(error) : res.redirect('/')); });
+        req.session.regenerate(error => { if (error) return next(error); req.session.userId = accepted.userId;req.session.authVersion=accepted.authVersion; req.session.householdId = accepted.householdId; req.session.flash = tr("workspaces:s01d7a745e2c0"); req.session.save(error => error ? next(error) : res.redirect('/kitchen')); });
       } catch (error) { if (error.status === 422) return joinPage(req, res, [error.message], 422); throw error; }
     },
   };

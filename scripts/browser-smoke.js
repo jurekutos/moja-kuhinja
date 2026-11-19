@@ -39,7 +39,7 @@ try {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(base + '/login');
   await page.getByLabel('E-poštni naslov').fill('browser@example.test'); await page.getByLabel('Geslo', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Prijava' }).click(); await page.waitForURL(base + '/');
+  await page.getByRole('button', { name: 'Prijava' }).click(); await page.waitForURL(base + '/kitchen');
   await page.goto(base+'/settings');await page.getByLabel('Prikazno ime',{exact:true}).fill('Preizkus profil');await page.getByRole('button',{name:'Shrani ime',exact:true}).click();await page.waitForURL(base+'/settings');assert.equal(await page.getByLabel('Prikazno ime',{exact:true}).inputValue(),'Preizkus profil');
   for(const url of ['/super-admin','/super-admin/users','/super-admin/workspaces','/super-admin/statistics','/workspace/delete']){await page.goto(base+url);assert.equal(await page.locator('h1').count(),1);}
   await fs.mkdir('.runtime/screenshots',{recursive:true});await page.goto(base+'/settings');await page.screenshot({path:'.runtime/screenshots/settings-desktop.png',fullPage:true});await page.goto(base+'/super-admin');await page.screenshot({path:'.runtime/screenshots/super-admin-desktop.png',fullPage:true});
@@ -82,12 +82,12 @@ try {
   assert.equal(await page.locator('.card-heart button').getAttribute('aria-pressed'), 'false');
   await page.locator('.card-heart button').click(); await page.waitForURL(filterUrl);
   assert.equal(await page.locator('.card-heart button').getAttribute('aria-pressed'), 'true');
-  await page.goto(base + '/settings');
-  await page.locator('#my-recipes summary').click();
-  page.once('dialog', dialog => dialog.accept());
-  await page.getByRole('button', { name: 'Pošlji v skupno kuharico', exact: true }).click();await page.waitForURL(/\/settings\?recipePage=1#my-recipes$/);
-  const publicationLink=page.locator('#my-recipes a[href*="reviewLanguage"]').first();
-  const communityUrl=new URL(await publicationLink.getAttribute('href'),base).href;await page.goto(communityUrl);
+  // Legacy pending submissions remain supported; dedicated suggestion UI has
+  // its own browser coverage in browser-library.js.
+  const csrf=await page.locator('input[name=_csrf]').first().inputValue();
+  const submitted=await page.request.post(base+'/recipes/'+id+'/submit',{form:{_csrf:csrf,language:'sl'}});
+  assert.equal(submitted.status(),200);
+  const communityUrl=submitted.url();await page.goto(communityUrl);
   await page.getByRole('button', { name: 'Odobri objavo', exact: true }).click(); await page.waitForURL(base + '/admin/reviews');
   await page.goto(base + '/community'); assert.equal(await page.locator('.recipe-card').count(), 1);
   await page.locator('.card-heart button').click(); await page.waitForURL(base + '/community');
@@ -136,7 +136,7 @@ try {
   const guestContext = await browser.newContext(); const guest = await guestContext.newPage();
   await guest.goto(new URL(joinUrl,base).href); await guest.getByLabel('Vaše ime', { exact: true }).fill('Gost');
   await guest.getByLabel('Geslo', { exact: true }).fill(password); await guest.getByLabel('Ponovite geslo', { exact: true }).fill(password);
-  await guest.getByRole('button', { name: 'Sprejmi povabilo', exact: true }).click(); await guest.waitForURL(base + '/'); await guestContext.close();
+  await guest.getByRole('button', { name: 'Sprejmi povabilo', exact: true }).click(); await guest.waitForURL(base + '/kitchen'); await guestContext.close();
   await page.goto(base + '/recipes?ingredient=PI%C5%A0%C4%8CANEC');
   await fs.mkdir('.runtime/screenshots', { recursive: true });
   await page.screenshot({ path: '.runtime/screenshots/desktop.png', fullPage: true });
